@@ -23,6 +23,7 @@ export interface User {
   createdAt: string
   emailPreferences: EmailPreferences
   plan?: EnginePlan
+  questionsUsed?: number
 }
 
 export type SessionUser = Omit<User, 'password'>

@@ -1,3 +1,6 @@
+import { authService } from '@/services/auth'
+import { isSupabaseEnabled } from '@/services/backend'
+import { getSupabase } from '@/services/supabase'
 import { readJson, writeJson } from '@/services/storage'
 import type { AiConversation, AiMessage, EnginePlan } from '@/types'
 import { BASIC_QUESTIONS, FREE_QUESTIONS, STORAGE_KEYS } from '@/utils/constants'
@@ -84,6 +87,9 @@ export const conversationService = {
   },
 
   used(userId?: string) {
+    if (isSupabaseEnabled() && userId) {
+      return authService.current()?.questionsUsed ?? 0
+    }
     const credits = loadCredits()
     if (userId) return credits.byUser[userId] ?? 0
     return credits.guestUsed
@@ -93,7 +99,12 @@ export const conversationService = {
     return Math.max(0, this.creditLimit(plan) - this.used(userId))
   },
 
-  consume(userId?: string) {
+  async consume(userId?: string) {
+    if (isSupabaseEnabled() && userId) {
+      const { data, error } = await getSupabase().rpc('consume_question')
+      if (!error && typeof data === 'number') authService.setQuestionsUsed(data)
+      return
+    }
     const credits = loadCredits()
     if (userId) {
       credits.byUser[userId] = (credits.byUser[userId] ?? 0) + 1

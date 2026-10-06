@@ -12,7 +12,7 @@ export function TermsPage() {
       <ul className="mt-6 list-disc space-y-2 pl-5 text-sm text-muted">
         <li>Courses do not constitute investment advice or a personal recommendation.</li>
         <li>Certificates record completion of educational material. They are not a professional licence.</li>
-        <li>This demonstration stores account and progress data in your browser until a backend is connected.</li>
+        <li>Account and progress data are stored on the academy's servers when Supabase is configured, or in this browser during local demo mode.</li>
         <li>Trading forex and CFDs involves significant risk and may not be suitable for all investors.</li>
       </ul>
     </div>
@@ -22,13 +22,13 @@ export function TermsPage() {
 export function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Seo title="Privacy policy" description={`How ${APP_NAME} handles account information in this educational demonstration.`} />
+      <Seo title="Privacy policy" description={`How ${APP_NAME} handles account information.`} />
       <h1 className="text-3xl font-extrabold text-ink sm:text-4xl">Privacy policy</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
-        In this demonstration, registration details and learning progress are stored locally in your browser using localStorage. When a production API is connected, those records will move to secured servers operated by {COMPANY_NAME}.
+        When this academy is connected to its database, registration details and learning progress are stored on that academy's Supabase project. In local development without those keys, the same records stay in this browser.
       </p>
       <p className="mt-4 text-sm leading-relaxed text-muted">
-        We collect name, email, mobile number, country, and learning activity to operate the Academy. We do not sell educational records. You can request deletion of a live account through official {APP_SHORT_NAME} support channels once the backend is live.
+        We collect name, email, mobile number, country, and learning activity to operate the Academy. We do not sell educational records. You can request deletion of a live account through official {APP_SHORT_NAME} support channels.
       </p>
     </div>
   )

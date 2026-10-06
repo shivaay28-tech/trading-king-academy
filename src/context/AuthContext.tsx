@@ -1,19 +1,33 @@
 import { authService } from '@/services/auth'
 import type { AuthResult, RegisterPayload, SessionUser } from '@/types'
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 interface AuthContextValue {
   user: SessionUser | null
   login: (email: string, password: string) => Promise<AuthResult>
   register: (payload: RegisterPayload) => Promise<AuthResult>
-  logout: () => void
-  refresh: () => void
+  logout: () => Promise<void>
+  refresh: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(() => authService.current())
+
+  useEffect(() => {
+    let active = true
+    void authService.hydrate().then((next) => {
+      if (active) setUser(next)
+    })
+    const unsubscribe = authService.onAuthChange((next) => {
+      if (active) setUser(next)
+    })
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await authService.login(email, password)
@@ -27,13 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result
   }, [])
 
-  const logout = useCallback(() => {
-    authService.logout()
+  const logout = useCallback(async () => {
+    await authService.logout()
     setUser(null)
   }, [])
 
-  const refresh = useCallback(() => {
-    setUser(authService.current())
+  const refresh = useCallback(async () => {
+    const next = await authService.hydrate()
+    setUser(next)
   }, [])
 
   const value = useMemo(

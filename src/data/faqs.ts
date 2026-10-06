@@ -35,7 +35,7 @@ export const faqs: FaqItem[] = [
     id: 'faq-6',
     question: 'Can I study on a mobile device?',
     answer:
-      'Yes. The Academy is designed to work on phones, tablets, and desktops. Lesson progress, notes, and enrolments are stored in your browser for this demonstration environment.',
+      'Yes. The Academy is designed to work on phones, tablets, and desktops. Lesson progress, notes, and enrolments are stored with your account so you can continue on another device.',
   },
   {
     id: 'faq-7',

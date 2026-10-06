@@ -1,8 +1,9 @@
 import { catalogService } from '@/services/catalog'
 import { progressService } from '@/services/progress'
+import { authService } from '@/services/auth'
 import type { Course } from '@/types'
 import { getCourseLessons, progressPercent } from '@/utils/course'
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
 
 interface AcademyContextValue {
@@ -24,6 +25,19 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [revision, setRevision] = useState(0)
   const refresh = useCallback(() => setRevision((value) => value + 1), [])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      await catalogService.refresh()
+      await progressService.refresh(user?.id, user?.role === 'admin')
+      if (user?.role === 'admin') await authService.refreshUsers()
+      if (!cancelled) setRevision((value) => value + 1)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, user?.role])
 
   const courses = useMemo(() => catalogService.listCourses(), [revision])
 
@@ -49,8 +63,7 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
   const toggleSaved = useCallback(
     (courseId: string) => {
       if (!user) return
-      progressService.toggleSaved(user.id, courseId)
-      refresh()
+      void progressService.toggleSaved(user.id, courseId).then(() => refresh())
     },
     [user, refresh],
   )

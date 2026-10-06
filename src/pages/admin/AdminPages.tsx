@@ -8,15 +8,16 @@ import { Select } from '@/components/ui/Select'
 import { useAcademy } from '@/context/AcademyContext'
 import { useToast } from '@/context/ToastContext'
 import { categories } from '@/data/categories'
+import { countries } from '@/data/countries'
 import { authService } from '@/services/auth'
 import { catalogService } from '@/services/catalog'
 import { APP_NAME } from '@/utils/constants'
 import { progressService } from '@/services/progress'
-import type { Course, Difficulty, Lesson, Module } from '@/types'
+import type { Course, Difficulty, Lesson, Module, SessionUser } from '@/types'
 import { getCourseLessons, getLessonCount, progressPercent } from '@/utils/course'
 import { formatDate } from '@/utils/format'
 import { Award, BookOpen, Pencil, Plus, Trash2, Users } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 export function AdminDashboardPage() {
   const { courses } = useAcademy()
@@ -28,7 +29,7 @@ export function AdminDashboardPage() {
     <div className="px-4 py-8 sm:px-6">
       <Seo title="Admin dashboard" description={`${APP_NAME} administration overview.`} />
       <h1 className="text-3xl font-extrabold text-ink">Admin dashboard</h1>
-      <p className="mt-2 text-sm text-muted">Sample operations data. Connect REST endpoints through `src/services` when the API is ready.</p>
+      <p className="mt-2 text-sm text-muted">Live enrolment, student, and certificate counts for this academy.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardStatCard label="Published courses" value={courses.filter((item) => item.status === 'published').length} icon={BookOpen} />
         <DashboardStatCard label="Students" value={students.length} icon={Users} accent="navy" />
@@ -47,12 +48,16 @@ export function AdminCoursesPage() {
 
   const filtered = courses.filter((course) => course.title.toLowerCase().includes(query.toLowerCase()))
 
-  function save(addAnother = false) {
+  async function save(addAnother = false) {
     if (!editing) return
-    catalogService.saveCourse(editing)
-    refresh()
-    push('success', 'Course saved')
-    setEditing(addAnother ? catalogService.createEmptyCourse() : null)
+    try {
+      await catalogService.saveCourse(editing)
+      refresh()
+      push('success', 'Course saved')
+      setEditing(addAnother ? catalogService.createEmptyCourse() : null)
+    } catch (error) {
+      push('error', 'Could not save course', error instanceof Error ? error.message : 'Try again.')
+    }
   }
 
   return (
@@ -87,9 +92,15 @@ export function AdminCoursesPage() {
                   type="button"
                   className="text-danger"
                   onClick={() => {
-                    catalogService.deleteCourse(course.id)
-                    refresh()
-                    push('info', 'Course removed')
+                    void catalogService.deleteCourse(course.id).then(
+                      () => {
+                        refresh()
+                        push('info', 'Course removed')
+                      },
+                      (error: unknown) => {
+                        push('error', 'Could not delete course', error instanceof Error ? error.message : 'Try again.')
+                      },
+                    )
                   }}
                   aria-label={`Delete ${course.title}`}
                 >
@@ -137,8 +148,8 @@ export function AdminCoursesPage() {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={() => save(false)}>Save course</Button>
-              <Button variant="secondary" onClick={() => save(true)}>
+              <Button onClick={() => void save(false)}>Save course</Button>
+              <Button variant="secondary" onClick={() => void save(true)}>
                 Save and add another
               </Button>
             </div>
@@ -164,10 +175,16 @@ export function AdminModulesPage() {
       order: course.modules.length + 1,
       lessons: [],
     }
-    catalogService.saveCourse({ ...course, modules: [...course.modules, next] })
-    setModuleTitle('')
-    refresh()
-    push('success', 'Module added')
+    void catalogService.saveCourse({ ...course, modules: [...course.modules, next] }).then(
+      () => {
+        setModuleTitle('')
+        refresh()
+        push('success', 'Module added')
+      },
+      (error: unknown) => {
+        push('error', 'Could not save module', error instanceof Error ? error.message : 'Try again.')
+      },
+    )
   }
 
   return (
@@ -234,9 +251,15 @@ export function AdminLessonsPage() {
     const modules = course.modules.map((module, index) =>
       index === 0 ? { ...module, lessons: [...module.lessons, lesson] } : module,
     )
-    catalogService.saveCourse({ ...course, modules })
-    refresh()
-    push('success', 'Lesson added to the first module')
+    void catalogService.saveCourse({ ...course, modules }).then(
+      () => {
+        refresh()
+        push('success', 'Lesson added to the first module')
+      },
+      (error: unknown) => {
+        push('error', 'Could not save lesson', error instanceof Error ? error.message : 'Try again.')
+      },
+    )
   }
 
   return (
@@ -272,36 +295,112 @@ export function AdminLessonsPage() {
 }
 
 export function AdminStudentsPage() {
+  const { push } = useToast()
+  const { revision } = useAcademy()
   const [query, setQuery] = useState('')
-  const students = authService
-    .listUsers()
-    .filter((user) => user.fullName.toLowerCase().includes(query.toLowerCase()) || user.email.toLowerCase().includes(query.toLowerCase()))
+  const [creating, setCreating] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [countryCode, setCountryCode] = useState('AE')
+  const [mobile, setMobile] = useState('')
+  const [students, setStudents] = useState<SessionUser[]>(() => authService.listUsers())
+
+  useEffect(() => {
+    void authService.refreshUsers().then(setStudents)
+  }, [revision])
+
+  const filtered = students.filter(
+    (user) =>
+      user.fullName.toLowerCase().includes(query.toLowerCase()) ||
+      user.email.toLowerCase().includes(query.toLowerCase()),
+  )
+
+  async function createStudent() {
+    const country = countries.find((item) => item.code === countryCode)
+    if (!fullName.trim() || !email.trim() || password.length < 8) {
+      push('error', 'Name, email, and an 8-character password are required')
+      return
+    }
+    setSaving(true)
+    const result = await authService.createStudent({
+      fullName: fullName.trim(),
+      email: email.trim(),
+      password,
+      country: country?.name ?? '',
+      countryCode,
+      mobile: mobile.trim(),
+    })
+    setSaving(false)
+    if (!result.ok) {
+      push('error', 'Could not create student', result.message)
+      return
+    }
+    const next = await authService.refreshUsers()
+    setStudents(next)
+    setCreating(false)
+    setFullName('')
+    setEmail('')
+    setPassword('')
+    setMobile('')
+    push('success', 'Student created', result.user?.email ?? result.message)
+  }
 
   return (
-    <AdminTable title="Manage students" query={query} onQuery={setQuery}>
-      <table className="w-full min-w-[720px] text-left text-sm">
-        <thead className="text-xs text-muted uppercase">
-          <tr>
-            <th className="px-3 py-2">Name</th>
-            <th className="px-3 py-2">Email</th>
-            <th className="px-3 py-2">Country</th>
-            <th className="px-3 py-2">Role</th>
-            <th className="px-3 py-2">Joined</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map((user) => (
-            <tr key={user.id} className="border-t border-line">
-              <td className="px-3 py-3 font-semibold text-ink">{user.fullName}</td>
-              <td className="px-3 py-3">{user.email}</td>
-              <td className="px-3 py-3">{user.country}</td>
-              <td className="px-3 py-3">{user.role}</td>
-              <td className="px-3 py-3">{formatDate(user.createdAt)}</td>
+    <>
+      <AdminTable title="Manage students" query={query} onQuery={setQuery} onCreate={() => setCreating(true)} createLabel="Create student">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="text-xs text-muted uppercase">
+            <tr>
+              <th className="px-3 py-2">Name</th>
+              <th className="px-3 py-2">Email</th>
+              <th className="px-3 py-2">Country</th>
+              <th className="px-3 py-2">Role</th>
+              <th className="px-3 py-2">Joined</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </AdminTable>
+          </thead>
+          <tbody>
+            {filtered.map((user) => (
+              <tr key={user.id} className="border-t border-line">
+                <td className="px-3 py-3 font-semibold text-ink">{user.fullName}</td>
+                <td className="px-3 py-3">{user.email}</td>
+                <td className="px-3 py-3">{user.country}</td>
+                <td className="px-3 py-3">{user.role}</td>
+                <td className="px-3 py-3">{formatDate(user.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </AdminTable>
+      <Modal open={creating} title="Create student" onClose={() => setCreating(false)}>
+        <div className="grid gap-4">
+          <Input label="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
+          <Input label="Email address" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Select
+            label="Country"
+            value={countryCode}
+            onChange={(event) => setCountryCode(event.target.value)}
+            options={countries.map((item) => ({ value: item.code, label: `${item.name} (${item.dial})` }))}
+          />
+          <Input
+            label="Mobile number"
+            inputMode="numeric"
+            value={mobile}
+            onChange={(event) => setMobile(event.target.value.replace(/[^\d]/g, ''))}
+          />
+          <Input label="Temporary password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setCreating(false)}>
+              Cancel
+            </Button>
+            <Button loading={saving} onClick={() => void createStudent()}>
+              Create account
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   )
 }
 
@@ -426,12 +525,14 @@ function AdminTable({
   query,
   onQuery,
   onCreate,
+  createLabel = 'New',
   children,
 }: {
   title: string
   query: string
   onQuery: (value: string) => void
   onCreate?: () => void
+  createLabel?: string
   children: ReactNode
 }) {
   return (
@@ -441,7 +542,7 @@ function AdminTable({
         <h1 className="text-3xl font-extrabold text-ink">{title}</h1>
         {onCreate ? (
           <Button onClick={onCreate} icon={<Plus className="h-4 w-4" />}>
-            New
+            {createLabel}
           </Button>
         ) : null}
       </div>

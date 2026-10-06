@@ -51,7 +51,7 @@ export function CourseDetailsPage() {
     setLoading(true)
     try {
       await enroll(currentCourse.id)
-      push('success', 'You are enrolled', 'Your progress will be saved in this browser.')
+      push('success', 'You are enrolled', 'Your progress is saved to your account.')
       refresh()
     } finally {
       setLoading(false)
@@ -111,9 +111,9 @@ export function CourseDetailsPage() {
         <aside className="lg:col-span-4">
           <div className="sticky top-24 rounded-3xl panel p-6 shadow-card">
             <p className="text-sm font-semibold text-muted">Educational enrolment</p>
-            <p className="mt-1 text-2xl font-extrabold text-ink">Free in this demo</p>
+            <p className="mt-1 text-2xl font-extrabold text-ink">Free enrolment</p>
             <p className="mt-2 text-sm text-muted">
-              Enrolment stores progress locally so a future API or CRM can replace the mock service.
+              Enrolment stores lesson progress, notes, and quiz results with your Academy account.
             </p>
             <div className="mt-5 space-y-2">
               {enrolled && firstLesson ? (

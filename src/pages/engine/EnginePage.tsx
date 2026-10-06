@@ -175,7 +175,7 @@ export function EnginePage() {
       const latest = conversationService.get(conversationId)
       if (latest?.messages[latest.messages.length - 1]?.role === 'assistant') return
       if (!output.trim()) return
-      conversationService.consume(user?.id)
+      await conversationService.consume(user?.id)
       conversationService.appendMessage(conversationId, newMessage('assistant', output.trim()))
       refreshList()
     } catch (error) {
@@ -197,7 +197,7 @@ export function EnginePage() {
     const partial = streamRef.current.trim()
     if (partial && activeId) {
       conversationService.appendMessage(activeId, newMessage('assistant', partial))
-      conversationService.consume(user?.id)
+      void conversationService.consume(user?.id)
       refreshList()
     }
     streamRef.current = ''
@@ -311,8 +311,7 @@ export function EnginePage() {
       navigate('/register', { state: { from: '/engine' } })
       return
     }
-    authService.updateProfile(user.id, { plan: 'basic' })
-    refresh()
+    void authService.updateProfile(user.id, { plan: 'basic' }).then(() => refresh())
     setCreditsOpen(false)
     push('success', 'Basic plan is active', `Basic includes 200 questions and a free ${APP_SHORT_NAME} trading account.`)
   }

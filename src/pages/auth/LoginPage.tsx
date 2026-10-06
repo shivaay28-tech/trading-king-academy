@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { APP_NAME, DEMO_ADMIN, DEMO_STUDENT } from '@/utils/constants'
+import { isSupabaseEnabled } from '@/services/backend'
 import { isEmail, required, type FieldErrors } from '@/utils/validation'
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -46,7 +47,11 @@ export function LoginPage() {
       <Seo title="Login" description={`Sign in to ${APP_NAME} to continue your educational courses.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">Welcome back</p>
       <h1 className="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Sign in to Academy</h1>
-      <p className="mt-2 text-sm text-muted">Use your Academy email and password. Demo accounts are listed below.</p>
+      <p className="mt-2 text-sm text-muted">
+        {isSupabaseEnabled()
+          ? 'Use the email and password for this academy.'
+          : 'Use your Academy email and password. Demo accounts are listed below.'}
+      </p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
         <Input label="Email address" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} error={errors.email} />
         <Input label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} error={errors.password} />
@@ -63,11 +68,13 @@ export function LoginPage() {
           Forgot password?
         </Link>
       </div>
-      <div className="mt-8 rounded-2xl border border-bright/15 bg-white/5 p-4 text-xs text-muted">
-        <p className="font-semibold text-ink">Demo access</p>
-        <p className="mt-1">Student: {DEMO_STUDENT.email} / {DEMO_STUDENT.password}</p>
-        <p>Admin: {DEMO_ADMIN.email} / {DEMO_ADMIN.password}</p>
-      </div>
+      {isSupabaseEnabled() ? null : (
+        <div className="mt-8 rounded-2xl border border-bright/15 bg-white/5 p-4 text-xs text-muted">
+          <p className="font-semibold text-ink">Demo access</p>
+          <p className="mt-1">Student: {DEMO_STUDENT.email} / {DEMO_STUDENT.password}</p>
+          <p>Admin: {DEMO_ADMIN.email} / {DEMO_ADMIN.password}</p>
+        </div>
+      )}
     </div>
   )
 }

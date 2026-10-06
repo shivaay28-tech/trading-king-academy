@@ -24,29 +24,29 @@ export function ProfilePage() {
   if (!user) return null
   const currentUser = user
 
-  function saveProfile() {
+  async function saveProfile() {
     if (!isPhone(mobile)) {
       push('error', 'Enter a valid mobile number')
       return
     }
     const country = countries.find((item) => item.code === countryCode)
-    authService.updateProfile(currentUser.id, {
+    await authService.updateProfile(currentUser.id, {
       fullName,
       mobile,
       countryCode,
       country: country?.name ?? currentUser.country,
       emailPreferences: prefs,
     })
-    refresh()
+    await refresh()
     push('success', 'Profile updated')
   }
 
-  function savePassword() {
+  async function savePassword() {
     if (!isStrongPassword(nextPassword)) {
       push('error', 'New password must be at least 8 characters with a letter and a number')
       return
     }
-    const result = authService.changePassword(currentUser.id, currentPassword, nextPassword)
+    const result = await authService.changePassword(currentUser.id, currentPassword, nextPassword)
     push(result.ok ? 'success' : 'error', result.message)
     if (result.ok) {
       setCurrentPassword('')

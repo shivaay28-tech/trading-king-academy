@@ -162,7 +162,7 @@ export function LessonViewerPage() {
               onChange={(event) => setNote(event.target.value)}
               onBlur={() => user && progressService.saveNote(user.id, lesson.id, note)}
               className="mt-3 min-h-28 w-full rounded-xl border border-line bg-white/5 p-3 text-sm text-ink outline-none focus:border-bright"
-              placeholder="Capture definitions, questions, or items to review. Notes stay in this browser."
+              placeholder="Capture definitions, questions, or items to review. Notes are saved to your account."
             />
           </section>
 

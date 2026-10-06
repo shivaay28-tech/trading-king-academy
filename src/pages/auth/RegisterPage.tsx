@@ -9,6 +9,7 @@ import { isEmail, isPhone, isStrongPassword, required, type FieldErrors } from '
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { APP_NAME } from '@/utils/constants'
+import { isSupabaseEnabled } from '@/services/backend'
 
 type Fields = 'fullName' | 'email' | 'mobile' | 'country' | 'password' | 'confirm' | 'terms' | 'form'
 
@@ -62,6 +63,11 @@ export function RegisterPage() {
       push('error', 'Registration failed', result.message)
       return
     }
+    if (!result.user) {
+      push('success', 'Check your email', result.message)
+      navigate('/login')
+      return
+    }
     push('success', 'Account created', 'You can start exploring the AI Engine and courses.')
     navigate('/engine')
   }
@@ -71,7 +77,11 @@ export function RegisterPage() {
       <Seo title="Create account" description={`Register for a free ${APP_NAME} learning account.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">New student</p>
       <h1 className="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Create your account</h1>
-      <p className="mt-2 text-sm text-muted">One Academy login stores your enrolments, notes, quizzes, and certificates in this demo.</p>
+      <p className="mt-2 text-sm text-muted">
+        {isSupabaseEnabled()
+          ? 'Create a free student account. Enrolments, notes, quizzes, and certificates stay with you on every device.'
+          : 'One Academy login stores your enrolments, notes, quizzes, and certificates in this browser until a backend is connected.'}
+      </p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
         <Input label="Full name" name="fullName" value={fullName} onChange={(event) => setFullName(event.target.value)} error={errors.fullName} autoComplete="name" />
         <Input label="Email address" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} error={errors.email} autoComplete="email" />

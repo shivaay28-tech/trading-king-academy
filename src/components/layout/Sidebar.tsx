@@ -163,8 +163,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => {
-            logout()
-            navigate('/')
+            void logout().then(() => navigate('/'))
           }}
           className={cn(
             'mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-ink/60 hover:bg-white/8 hover:text-ink',

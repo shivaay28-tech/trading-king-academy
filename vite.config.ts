@@ -1,4 +1,5 @@
 import { BRAND } from './server/brand.ts'
+import { adminApiPlugin } from './server/adminApiPlugin.ts'
 import { engineChatPlugin } from './server/engineChat.ts'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -14,6 +15,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     engineChatPlugin(),
+    adminApiPlugin(),
     {
       name: 'brand-html',
       transformIndexHtml(html) {

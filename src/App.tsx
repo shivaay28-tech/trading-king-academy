@@ -37,17 +37,20 @@ import { MyCoursesPage } from '@/pages/student/MyCoursesPage'
 import { ProfilePage } from '@/pages/student/ProfilePage'
 import { QuizPage } from '@/pages/student/QuizPage'
 import { EnginePage } from '@/pages/engine/EnginePage'
+import { isSupabaseEnabled } from '@/services/backend'
 import { authService } from '@/services/auth'
 import { catalogService } from '@/services/catalog'
 import { progressService } from '@/services/progress'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
-catalogService.listCourses()
-catalogService.listQuizzes()
-authService.listUsers()
-progressService.allEnrollments()
-progressService.allCertificates()
-progressService.allAttempts()
+if (!isSupabaseEnabled()) {
+  catalogService.listCourses()
+  catalogService.listQuizzes()
+  authService.listUsers()
+  progressService.allEnrollments()
+  progressService.allCertificates()
+  progressService.allAttempts()
+}
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '')
 

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input'
 import { useToast } from '@/context/ToastContext'
 import { authService } from '@/services/auth'
 import { APP_NAME } from '@/utils/constants'
+import { isSupabaseEnabled } from '@/services/backend'
 import { isEmail, required } from '@/utils/validation'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -36,7 +37,11 @@ export function ForgotPasswordPage() {
     <div>
       <Seo title="Forgot password" description={`Request a ${APP_NAME} password reset.`} />
       <h1 className="text-3xl font-extrabold text-ink">Forgot password</h1>
-      <p className="mt-2 text-sm text-muted">Enter your email. In this demo, a reset token is generated locally instead of sending mail.</p>
+      <p className="mt-2 text-sm text-muted">
+        {isSupabaseEnabled()
+          ? 'Enter your email and we will send a password reset link if an account exists.'
+          : 'Enter your email. In local demo mode, a reset token is generated in this browser instead of sending mail.'}
+      </p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
         <Input label="Email address" type="email" value={email} onChange={(event) => setEmail(event.target.value)} error={error} />
         <Button type="submit" className="w-full" loading={loading}>
@@ -63,7 +68,7 @@ export function ResetPasswordPage() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!token.trim()) {
+    if (!isSupabaseEnabled() && !token.trim()) {
       setError('A reset token is required.')
       return
     }
@@ -88,7 +93,9 @@ export function ResetPasswordPage() {
       <Seo title="Reset password" description={`Choose a new ${APP_NAME} password.`} />
       <h1 className="text-3xl font-extrabold text-ink">Reset password</h1>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
-        <Input label="Reset token" value={token} onChange={(event) => setToken(event.target.value)} />
+        {isSupabaseEnabled() ? null : (
+          <Input label="Reset token" value={token} onChange={(event) => setToken(event.target.value)} />
+        )}
         <Input label="New password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         <Input label="Confirm password" type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} />
         {error ? <p className="text-sm text-danger">{error}</p> : null}
