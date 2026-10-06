@@ -32,10 +32,10 @@ export function LearningPathPage() {
   const { courses } = useAcademy()
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
       <Seo title="Learning path" description={`A suggested ${APP_NAME} sequence from forex foundations to analysis, risk, and partner education.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">Suggested sequence</p>
-      <h1 className="mt-2 text-4xl font-extrabold text-ink">Learning path</h1>
+      <h1 className="mt-2 text-3xl font-extrabold text-ink sm:text-4xl">Learning path</h1>
       <p className="mt-3 max-w-2xl text-sm text-muted">
         This path is a study recommendation, not a requirement. You can enrol in any published course at any time.
       </p>

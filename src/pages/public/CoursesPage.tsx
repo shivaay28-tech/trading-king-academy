@@ -38,10 +38,10 @@ export function CoursesPage() {
   }, [courses, query, categoryId, difficulty])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
       <Seo title="Courses" description={`Browse ${APP_NAME} courses on forex, CFDs, analysis, risk, MetaTrader 5, and introducing broker education.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">Catalogue</p>
-      <h1 className="mt-2 text-4xl font-extrabold text-ink">Course listing</h1>
+      <h1 className="mt-2 text-3xl font-extrabold text-ink sm:text-4xl">Course listing</h1>
       <p className="mt-3 max-w-2xl text-sm text-muted">
         Select more than one course and enrol together. After that, continue any of them from this catalogue, your dashboard, or a lesson link.
       </p>

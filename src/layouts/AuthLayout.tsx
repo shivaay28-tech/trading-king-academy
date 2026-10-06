@@ -5,7 +5,7 @@ import { Link, Outlet } from 'react-router-dom'
 
 export function AuthLayout() {
   return (
-    <div className="atmosphere min-h-screen overflow-x-hidden">
+    <div className="atmosphere min-h-dvh overflow-x-clip">
       <div className="grid min-h-screen lg:grid-cols-2">
         <div className="relative hidden border-r border-bright/15 gradient-hero lg:flex lg:flex-col lg:justify-between lg:p-10">
           <div className="grid-fade absolute inset-0" />

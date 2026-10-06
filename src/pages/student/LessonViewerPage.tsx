@@ -21,6 +21,7 @@ export function LessonViewerPage() {
   const { push } = useToast()
   const navigate = useNavigate()
   const [sidebar, setSidebar] = useState(true)
+  const [mobileCurriculum, setMobileCurriculum] = useState(false)
   const [saving, setSaving] = useState(false)
   const [note, setNote] = useState('')
 
@@ -78,7 +79,7 @@ export function LessonViewerPage() {
   const quizReady = completedIds.length >= Math.max(1, lessons.length - 1)
 
   return (
-    <div className="atmosphere flex min-h-screen overflow-x-hidden">
+    <div className="atmosphere flex min-h-dvh overflow-x-clip">
       <Seo title={lesson.title} description={lesson.summary} />
       {sidebar ? (
         <aside className="glass hidden w-[320px] shrink-0 overflow-y-auto border-r border-bright/15 p-4 lg:block">
@@ -92,13 +93,36 @@ export function LessonViewerPage() {
         </aside>
       ) : null}
 
+      {mobileCurriculum ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button type="button" className="absolute inset-0 bg-black/55" aria-label="Close lessons" onClick={() => setMobileCurriculum(false)} />
+          <aside className="relative h-full w-[min(100%,20rem)] overflow-y-auto bg-white p-4 shadow-float">
+            <Link to={`/courses/${course.slug}`} className="text-xs font-semibold text-accent">
+              Back to course
+            </Link>
+            <h2 className="mt-3 text-sm font-bold text-ink">{course.title}</h2>
+            <div className="mt-4" onClick={() => setMobileCurriculum(false)}>
+              <CourseCurriculumSidebar course={course} completedIds={completedIds} currentSlug={lesson.slug} />
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
       <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-bright/15 bg-navy/78 px-4 py-3 backdrop-blur">
-          <button type="button" className="rounded-lg p-2 hover:bg-white/8" onClick={() => setSidebar((value) => !value)}>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-bright/15 bg-navy/78 px-4 py-3 backdrop-blur">
+          <button
+            type="button"
+            className="grid h-10 w-10 place-items-center rounded-lg hover:bg-white/8 lg:hidden"
+            onClick={() => setMobileCurriculum(true)}
+            aria-label="Open lessons"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <button type="button" className="hidden rounded-lg p-2 hover:bg-white/8 lg:inline-flex" onClick={() => setSidebar((value) => !value)}>
             {sidebar ? <PanelLeftClose className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <p className="truncate text-sm font-semibold text-ink">{course.title}</p>
-          <span className="text-xs text-muted">
+          <p className="min-w-0 truncate text-sm font-semibold text-ink">{course.title}</p>
+          <span className="shrink-0 text-xs text-muted">
             {(adjacent?.index ?? 0) + 1}/{adjacent?.total}
           </span>
         </div>
@@ -114,7 +138,7 @@ export function LessonViewerPage() {
             </div>
           </div>
 
-          <h1 className="mt-6 text-3xl font-extrabold text-ink">{lesson.title}</h1>
+          <h1 className="mt-6 text-2xl font-extrabold text-ink sm:text-3xl">{lesson.title}</h1>
           <p className="mt-2 text-sm text-muted">{lesson.summary}</p>
           <div className="mt-6 space-y-4 text-sm leading-7 text-ink">
             {lesson.content.map((paragraph) => (
@@ -123,10 +147,10 @@ export function LessonViewerPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={downloadResource}>
+            <Button className="w-full sm:w-auto" variant="secondary" icon={<Download className="h-4 w-4" />} onClick={downloadResource}>
               Download resources
             </Button>
-            <Button loading={saving} onClick={markComplete}>
+            <Button className="w-full sm:w-auto" loading={saving} onClick={markComplete}>
               {completed ? 'Completed · continue' : 'Mark as complete'}
             </Button>
           </div>

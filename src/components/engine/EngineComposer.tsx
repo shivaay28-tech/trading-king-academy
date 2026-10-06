@@ -67,7 +67,7 @@ export function EngineComposer({
       onSubmit={onSubmit}
       onPaste={handlePaste}
       className={cn(
-        'rounded-[28px] border border-baazex/30 bg-white p-3 shadow-[0_0_0_1px_rgb(0_102_255_/_0.12),0_16px_40px_-24px_rgb(0_102_255_/_0.45)]',
+        'rounded-2xl border border-baazex/30 bg-white p-2.5 shadow-[0_0_0_1px_rgb(0_102_255_/_0.12),0_16px_40px_-24px_rgb(0_102_255_/_0.45)] sm:rounded-[28px] sm:p-3',
         disabled ? 'border-white/10 opacity-70' : 'border-bright/35',
       )}
     >

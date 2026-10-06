@@ -21,12 +21,12 @@ export function CategoryDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
       <Seo title={category.name} description={category.description} />
       <Link to="/categories" className="text-sm font-semibold text-accent">
         All categories
       </Link>
-      <h1 className="mt-3 text-4xl font-extrabold text-ink">{category.name}</h1>
+      <h1 className="mt-3 text-3xl font-extrabold text-ink sm:text-4xl">{category.name}</h1>
       <p className="mt-3 max-w-2xl text-sm text-muted">{category.description}</p>
       <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {matches.map((course) => (

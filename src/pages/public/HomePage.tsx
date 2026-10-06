@@ -95,36 +95,38 @@ export function HomePage() {
       />
       <section className="gradient-hero relative overflow-hidden">
         <div className="grid-fade absolute inset-0" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-white/60 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-ink uppercase">
+        <div className="relative mx-auto grid max-w-7xl min-w-0 items-center gap-10 px-4 py-12 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-12 lg:py-28">
+          <div className="min-w-0">
+            <p className="inline-flex max-w-full items-center rounded-full border border-ink/15 bg-white/60 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-ink uppercase sm:text-xs sm:tracking-[0.18em]">
               {COMPANY_NAME}
             </p>
-            <h1 className="display mt-5 text-4xl font-extrabold text-ink sm:text-6xl lg:text-[68px] lg:leading-[0.98]">
+            <h1 className="display mt-5 text-[1.85rem] leading-[1.12] font-extrabold text-ink sm:text-5xl sm:leading-tight lg:text-[68px] lg:leading-[0.98]">
               Learn the Markets. <span className="text-gradient">Trade with Greater Understanding.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-ink/70 sm:text-lg">
+            <p className="mt-5 max-w-xl text-sm leading-relaxed text-ink/70 sm:text-lg">
               Build your knowledge of forex, CFDs, market analysis, risk management, and the MT5 trading platform through structured educational courses.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" onClick={() => navigate('/engine')} icon={<Sparkles className="h-4 w-4" />}>
+              <Button size="lg" className="w-full sm:w-auto" onClick={() => navigate('/engine')} icon={<Sparkles className="h-4 w-4" />}>
                 Open AI Engine
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/courses')} icon={<BookOpen className="h-4 w-4" />}>
+              <Button size="lg" className="w-full sm:w-auto" variant="outline" onClick={() => navigate('/courses')} icon={<BookOpen className="h-4 w-4" />}>
                 Explore Courses
               </Button>
             </div>
             <p className="mt-6 max-w-xl text-xs leading-relaxed text-ink/40">{DISCLAIMER}</p>
           </div>
-          <HeroVisual />
+          <div className="min-w-0">
+            <HeroVisual />
+          </div>
         </div>
       </section>
 
-      <section className="border-y border-bright/15 bg-navy/80 py-16 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)]">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
+      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)] sm:py-16">
+        <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <p className="text-xs font-bold tracking-[0.18em] text-ink uppercase">AI Engine</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-4xl">
               Study charts with an educational assistant
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink/65">
@@ -147,7 +149,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <SectionHeading
           kicker="Popular courses"
           title="Start with a clear foundation"
@@ -160,7 +162,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="py-16">
+      <section className="py-10 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading kicker="Learning levels" title="A path that grows with your knowledge" />
           <div className="mt-8 grid gap-5 lg:grid-cols-3">
@@ -182,7 +184,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <SectionHeading kicker={`Why ${APP_NAME}`} title={`Why learn with ${APP_NAME}?`} />
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {why.map((item) => (
@@ -199,10 +201,10 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-bright/15 bg-navy/80 py-16 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)]">
+      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)] sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading kicker="How it works" title="Four steps from account to certificate" light />
-          <div className="mt-10 grid gap-6 md:grid-cols-4">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-4">
             {steps.map((item) => (
               <article key={item.step}>
                 <p className="text-3xl font-extrabold text-ink/80">{item.step}</p>
@@ -214,7 +216,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="grid gap-10 lg:grid-cols-2">
           <div>
             <SectionHeading kicker="Platform features" title="Built as a learning product, ready for CRM later" />
@@ -245,7 +247,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="py-16">
+      <section className="py-10 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading kicker="Categories" title="Eight focused learning areas" action={<Link to="/categories" className="text-sm font-semibold text-accent">Browse categories</Link>} />
           <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -259,14 +261,14 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
         <SectionHeading kicker="FAQ" title="Frequently asked questions" />
         <div className="mt-8 space-y-3">
           {faqs.slice(0, 5).map((item) => (
             <article key={item.id} className="panel overflow-hidden rounded-2xl">
               <button
                 type="button"
-                className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-bold text-ink"
+                className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left text-sm font-bold text-ink sm:px-5"
                 onClick={() => setOpenFaq((current) => (current === item.id ? undefined : item.id))}
               >
                 {item.question}
@@ -282,17 +284,17 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 pb-16 sm:px-6">
-        <div className="gradient-hero mx-auto max-w-7xl overflow-hidden rounded-3xl px-6 py-14 text-center">
-          <h2 className="text-3xl font-extrabold text-ink sm:text-4xl">Study the markets with a professional standard of care.</h2>
+      <section className="px-4 pb-10 sm:px-6 sm:pb-16">
+        <div className="gradient-hero mx-auto max-w-7xl overflow-hidden rounded-3xl px-5 py-10 text-center sm:px-6 sm:py-14">
+          <h2 className="text-2xl font-extrabold text-ink sm:text-4xl">Study the markets with a professional standard of care.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink/70">
             Enrol in {APP_NAME} to follow a structured curriculum. Education first. No profit claims. No personalised advice.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" onClick={() => navigate('/register')}>
+          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+            <Button size="lg" className="w-full sm:w-auto" onClick={() => navigate('/register')}>
               Create Free Account
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/courses')}>
+            <Button size="lg" className="w-full sm:w-auto" variant="outline" onClick={() => navigate('/courses')}>
               Explore Courses
             </Button>
           </div>
@@ -318,7 +320,7 @@ function SectionHeading({
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className={`text-xs font-bold tracking-[0.18em] uppercase ${light ? 'text-ink' : 'text-accent'}`}>{kicker}</p>
-        <h2 className={`mt-2 text-3xl font-extrabold tracking-tight ${light ? 'text-ink' : 'text-ink'}`}>{title}</h2>
+        <h2 className={`mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl ${light ? 'text-ink' : 'text-ink'}`}>{title}</h2>
       </div>
       {action}
     </div>

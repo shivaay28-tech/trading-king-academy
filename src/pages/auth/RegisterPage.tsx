@@ -70,7 +70,7 @@ export function RegisterPage() {
     <div>
       <Seo title="Create account" description={`Register for a free ${APP_NAME} learning account.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">New student</p>
-      <h1 className="mt-2 text-3xl font-extrabold text-ink">Create your account</h1>
+      <h1 className="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Create your account</h1>
       <p className="mt-2 text-sm text-muted">One Academy login stores your enrolments, notes, quizzes, and certificates in this demo.</p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
         <Input label="Full name" name="fullName" value={fullName} onChange={(event) => setFullName(event.target.value)} error={errors.fullName} autoComplete="name" />

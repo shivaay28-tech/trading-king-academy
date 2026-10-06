@@ -19,7 +19,7 @@ export function AdminLayout() {
   const [query, setQuery] = useState('')
 
   return (
-    <div className="atmosphere flex h-screen overflow-hidden">
+    <div className="atmosphere flex h-dvh overflow-hidden">
       <div className="hidden md:block">
         <Sidebar
           admin
@@ -29,7 +29,7 @@ export function AdminLayout() {
           onQuery={setQuery}
         />
       </div>
-      <div className="min-w-0 flex-1 overflow-y-auto pb-20 md:pb-0">
+      <div className="min-w-0 flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <div className="glass border-b border-bright/15">
           <div className="no-scrollbar flex gap-1 overflow-x-auto px-4 py-3">
             {subnav.map((item) => (

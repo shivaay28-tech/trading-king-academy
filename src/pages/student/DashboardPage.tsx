@@ -42,7 +42,7 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted">Welcome back</p>
-          <h1 className="text-3xl font-extrabold text-ink">{user?.fullName}</h1>
+          <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">{user?.fullName}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => navigate('/engine')}>

@@ -1,16 +1,16 @@
 export function HeroVisual() {
   return (
-    <div className="relative mx-auto w-full max-w-lg">
-      <div className="absolute -top-8 -right-6 h-28 w-28 rounded-full bg-bright/20 blur-3xl" />
-      <div className="glass-dark relative overflow-hidden rounded-3xl p-5 shadow-float">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
+    <div className="relative mx-auto w-full min-w-0 max-w-lg">
+      <div className="pointer-events-none absolute -top-8 right-0 h-28 w-28 rounded-full bg-bright/20 blur-3xl" />
+      <div className="glass-dark relative overflow-hidden rounded-3xl p-4 shadow-float sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-[11px] font-bold tracking-[0.16em] text-accent uppercase">Learning dashboard</p>
             <p className="mt-1 text-sm font-semibold text-ink">Market literacy, not trade calls</p>
           </div>
-          <span className="rounded-full bg-baazex/10 px-2.5 py-1 text-[11px] text-accent">Education</span>
+          <span className="shrink-0 rounded-full bg-baazex/10 px-2.5 py-1 text-[11px] text-accent">Education</span>
         </div>
-        <svg viewBox="0 0 420 180" className="h-40 w-full" role="img" aria-label="Illustrative educational price chart">
+        <svg viewBox="0 0 420 180" className="h-36 w-full sm:h-40" role="img" aria-label="Illustrative educational price chart">
           <defs>
             <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#7ED0FF" stopOpacity="0.35" />
@@ -35,8 +35,15 @@ export function HeroVisual() {
             </div>
           ))}
         </div>
+        <div className="mt-3 rounded-2xl bg-baazex/5 p-3 sm:hidden">
+          <p className="text-[11px] text-muted">Course progress</p>
+          <p className="mt-1 text-sm font-semibold text-ink">Risk fundamentals</p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-baazex/15">
+            <div className="h-full w-2/3 rounded-full bg-bright" />
+          </div>
+        </div>
       </div>
-      <div className="glass absolute -bottom-5 -left-4 w-40 rounded-2xl p-3">
+      <div className="glass absolute -bottom-5 left-0 hidden w-40 rounded-2xl p-3 sm:block">
         <p className="text-[11px] text-muted">Course progress</p>
         <p className="mt-1 text-sm font-semibold text-ink">Risk fundamentals</p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-baazex/15">

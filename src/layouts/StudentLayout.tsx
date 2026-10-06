@@ -17,11 +17,11 @@ export function StudentLayout() {
     : []
 
   return (
-    <div className="atmosphere flex h-screen overflow-hidden">
+    <div className="atmosphere flex h-dvh overflow-hidden">
       <div className="hidden md:block">
         <Sidebar collapsed={!isDesktop || collapsed} onToggle={() => setCollapsed((value) => !value)} query={query} onQuery={setQuery} />
       </div>
-      <div className="relative min-w-0 flex-1 overflow-y-auto pb-20 md:pb-0">
+      <div className="relative min-w-0 flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
         {query ? (
           <div className="glass absolute top-3 right-3 left-3 z-20 rounded-2xl p-3 md:left-auto md:w-80">
             {filtered.length ? (

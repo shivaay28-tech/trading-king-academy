@@ -45,7 +45,7 @@ export function LoginPage() {
     <div>
       <Seo title="Login" description={`Sign in to ${APP_NAME} to continue your educational courses.`} />
       <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">Welcome back</p>
-      <h1 className="mt-2 text-3xl font-extrabold text-ink">Sign in to Academy</h1>
+      <h1 className="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Sign in to Academy</h1>
       <p className="mt-2 text-sm text-muted">Use your Academy email and password. Demo accounts are listed below.</p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
         <Input label="Email address" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} error={errors.email} />

@@ -38,8 +38,8 @@ const columns = [
 export function Footer() {
   return (
     <footer className="border-t border-bright/15 bg-navy text-ink shadow-[inset_0_1px_0_rgb(92_225_255_/_0.18)]">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-12 lg:gap-10">
+        <div className="col-span-2 lg:col-span-4">
           <Logo light />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink/70">
             Structured education on forex, CFDs, market analysis, risk, and MetaTrader 5 from {COMPANY_NAME}.

@@ -59,12 +59,12 @@ export function CourseDetailsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
       <Seo title={course.title} description={course.description} />
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <p className="text-xs font-bold tracking-[0.16em] text-accent uppercase">{category?.name}</p>
-          <h1 className="mt-2 text-4xl font-extrabold text-ink">{course.title}</h1>
+          <h1 className="mt-2 text-3xl font-extrabold text-ink sm:text-4xl">{course.title}</h1>
           <p className="mt-3 text-base text-muted">{course.description}</p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted">
             <DifficultyBadge level={course.difficulty} />
