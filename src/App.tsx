@@ -17,6 +17,7 @@ import {
   AdminReportsPage,
   AdminStudentsPage,
 } from '@/pages/admin/AdminPages'
+import { SuperadminPage } from '@/pages/admin/SuperadminPage'
 import { ForgotPasswordPage, ResetPasswordPage } from '@/pages/auth/PasswordPages'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
@@ -129,6 +130,7 @@ export default function App() {
                 <Route path="/admin/quizzes" element={<AdminQuizzesPage />} />
                 <Route path="/admin/certificates" element={<AdminCertificatesPage />} />
                 <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/superadmin" element={<SuperadminPage />} />
               </Route>
 
               <Route element={<PublicLayout />}>

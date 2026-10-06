@@ -1,5 +1,6 @@
 import { Seo } from '@/components/Seo'
 import { EngineComposer } from '@/components/engine/EngineComposer'
+import { BasicCheckout } from '@/components/engine/BasicCheckout'
 import { EngineMarkdown } from '@/components/engine/EngineMarkdown'
 import { EngineRail } from '@/components/engine/EngineRail'
 import { EngineSidebar } from '@/components/engine/EngineSidebar'
@@ -9,20 +10,17 @@ import { useToast } from '@/context/ToastContext'
 import { instruments } from '@/data/instruments'
 import { symbolsInText, tradingViewTicker } from '@/data/tradingView'
 import { aiService } from '@/services/ai'
-import { authService } from '@/services/auth'
 import { conversationService, newMessage } from '@/services/conversations'
 import { formatLiveQuote, tradingViewService, type LiveQuote } from '@/services/tradingView'
 import type { AiAttachment, AiConversation } from '@/types'
-import { APP_NAME, APP_SHORT_NAME, BASIC_PRICE, COMPANY_URL, DISCLAIMER, ENGINE_NAME } from '@/utils/constants'
+import { APP_NAME, DISCLAIMER, ENGINE_NAME } from '@/utils/constants'
 import { analysisTitle, uid } from '@/utils/format'
 import { Camera, Clapperboard, Copy, Menu, MonitorUp, NotebookPen, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 export function EnginePage() {
-  const { user, refresh } = useAuth()
+  const { user } = useAuth()
   const { push } = useToast()
-  const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [conversations, setConversations] = useState<AiConversation[]>(() => conversationService.list())
   const [activeId, setActiveId] = useState<string | undefined>(conversations[0]?.id)
@@ -304,16 +302,6 @@ export function EnginePage() {
     setPendingFiles([])
     refreshList()
     await generateReply(conversation.id, userMessage, instrument)
-  }
-
-  function confirmBasic() {
-    if (!user) {
-      navigate('/register', { state: { from: '/engine' } })
-      return
-    }
-    void authService.updateProfile(user.id, { plan: 'basic' }).then(() => refresh())
-    setCreditsOpen(false)
-    push('success', 'Basic plan is active', `Basic includes 200 questions and a free ${APP_SHORT_NAME} trading account.`)
   }
 
   function submit(event?: FormEvent, value?: string) {
@@ -603,39 +591,13 @@ export function EnginePage() {
 
       <Modal
         open={creditsOpen}
-        title={plan === 'basic' ? 'Your Basic questions are used up' : 'Basic plan — $30'}
+        title={plan === 'basic' ? 'Your Basic questions are used up' : 'Basic plan'}
         onClose={() => setCreditsOpen(false)}
       >
         {plan === 'basic' ? (
           <p className="text-sm text-muted">You have used the 200 questions included with Basic.</p>
         ) : (
-          <>
-            <p className="text-sm text-muted">
-              Five free questions are included. Basic is ${BASIC_PRICE} and adds 200 questions, plus a free {APP_SHORT_NAME} trading account.
-            </p>
-            <div className="mt-5 flex flex-col gap-2">
-              <button type="button" className="h-11 rounded-xl bg-baazex font-semibold text-on-button" onClick={confirmBasic}>
-                {user ? `Confirm Basic — $${BASIC_PRICE}` : 'Create an account to get Basic'}
-              </button>
-              {user ? null : (
-                <button
-                  type="button"
-                  className="h-11 rounded-xl border border-line font-semibold"
-                  onClick={() => navigate('/login', { state: { from: '/engine' } })}
-                >
-                  Sign in
-                </button>
-              )}
-              <a
-                href={COMPANY_URL}
-                className="flex h-11 items-center justify-center rounded-xl border border-line text-sm font-semibold text-accent"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open a free {APP_SHORT_NAME} trading account
-              </a>
-            </div>
-          </>
+          <BasicCheckout open={creditsOpen} />
         )}
       </Modal>
     </div>

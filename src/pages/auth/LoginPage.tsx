@@ -38,7 +38,9 @@ export function LoginPage() {
       return
     }
     push('success', 'Welcome back', result.user.fullName)
-    const destination = from ?? (result.user.role === 'admin' ? '/admin' : '/engine')
+    const destination =
+      from ??
+      (result.user.role === 'superadmin' ? '/superadmin' : result.user.role === 'admin' ? '/admin' : '/engine')
     navigate(destination, { replace: true })
   }
 

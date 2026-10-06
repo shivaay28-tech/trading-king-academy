@@ -30,8 +30,9 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     void (async () => {
       await catalogService.refresh()
-      await progressService.refresh(user?.id, user?.role === 'admin')
-      if (user?.role === 'admin') await authService.refreshUsers()
+      const staff = user?.role === 'admin' || user?.role === 'superadmin'
+      await progressService.refresh(user?.id, staff)
+      if (staff) await authService.refreshUsers()
       if (!cancelled) setRevision((value) => value + 1)
     })()
     return () => {

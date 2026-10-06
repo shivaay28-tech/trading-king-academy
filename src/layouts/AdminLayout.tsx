@@ -1,5 +1,6 @@
 import { MobileNavigation } from '@/components/layout/MobileNavigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { useAuth } from '@/context/AuthContext'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -17,6 +18,8 @@ const subnav = [
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [query, setQuery] = useState('')
+  const { user } = useAuth()
+  const links = user?.role === 'superadmin' ? [...subnav, { to: '/superadmin', label: 'Payments' }] : subnav
 
   return (
     <div className="atmosphere flex h-dvh overflow-hidden">
@@ -32,7 +35,7 @@ export function AdminLayout() {
       <div className="min-w-0 flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <div className="glass border-b border-bright/15">
           <div className="no-scrollbar flex gap-1 overflow-x-auto px-4 py-3">
-            {subnav.map((item) => (
+            {links.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

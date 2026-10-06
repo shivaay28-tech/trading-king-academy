@@ -164,7 +164,14 @@ const localAuth = {
     const current = index >= 0 ? users[index] : undefined
     if (index < 0 || !current) return null
 
-    const nextUser: User = { ...current, ...patch, id: current.id, password: current.password }
+    const nextUser: User = {
+      ...current,
+      ...patch,
+      id: current.id,
+      password: current.password,
+      plan: current.plan,
+      role: current.role,
+    }
     const next = [...users]
     next[index] = nextUser
     saveUsers(next)
@@ -313,7 +320,6 @@ const cloudAuth = {
     if (patch.country !== undefined) updates.country = patch.country
     if (patch.countryCode !== undefined) updates.country_code = patch.countryCode
     if (patch.emailPreferences !== undefined) updates.email_preferences = patch.emailPreferences
-    if (patch.plan !== undefined) updates.plan = patch.plan
     if (patch.avatar !== undefined) updates.avatar = patch.avatar
     if (patch.questionsUsed !== undefined) updates.questions_used = patch.questionsUsed
     const { data, error } = await sb.from('profiles').update(updates).eq('id', userId).select('*').maybeSingle()

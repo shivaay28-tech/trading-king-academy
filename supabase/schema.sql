@@ -16,7 +16,7 @@ create table if not exists public.profiles (
   mobile text not null default '',
   country text not null default '',
   country_code text not null default '',
-  role text not null default 'student' check (role in ('student', 'admin')),
+  role text not null default 'student' check (role in ('student', 'admin', 'superadmin')),
   plan text not null default 'free' check (plan in ('free', 'basic')),
   questions_used integer not null default 0,
   avatar text,
@@ -33,7 +33,7 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
+    where id = auth.uid() and role in ('admin', 'superadmin')
   );
 $$;
 
@@ -165,8 +165,13 @@ returns trigger
 language plpgsql
 as $$
 begin
+  -- Service role and the SQL editor have no auth.uid(). Students always do.
+  if auth.uid() is null then
+    return new;
+  end if;
   if not public.is_admin() then
     new.role := old.role;
+    new.plan := old.plan;
     if new.questions_used < old.questions_used then
       new.questions_used := old.questions_used;
     end if;
@@ -392,3 +397,72 @@ grant select, insert, update, delete on public.courses, public.categories, publi
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.ensure_catalog_seed(jsonb) to anon, authenticated;
 grant execute on function public.consume_question() to authenticated;
+
+-- Existing databases keep the old role check until this runs.
+do $$
+declare
+  constraint_name text;
+begin
+  for constraint_name in
+    select con.conname
+    from pg_constraint con
+    where con.conrelid = 'public.profiles'::regclass
+      and con.contype = 'c'
+      and pg_get_constraintdef(con.oid) ilike '%role%'
+  loop
+    execute format('alter table public.profiles drop constraint %I', constraint_name);
+  end loop;
+end $$;
+
+alter table public.profiles
+  add constraint profiles_role_check check (role in ('student', 'admin', 'superadmin'));
+
+create table if not exists public.payment_settings (
+  id integer primary key default 1 check (id = 1),
+  price integer not null default 30,
+  note text not null default '',
+  upi_enabled boolean not null default false,
+  upi_id text not null default '',
+  upi_name text not null default '',
+  bank_enabled boolean not null default false,
+  bank_name text not null default '',
+  account_name text not null default '',
+  account_number text not null default '',
+  ifsc text not null default '',
+  crypto_enabled boolean not null default false,
+  crypto_asset text not null default '',
+  crypto_network text not null default '',
+  crypto_address text not null default ''
+);
+
+insert into public.payment_settings (id) values (1) on conflict (id) do nothing;
+
+create table if not exists public.payment_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  method text not null check (method in ('upi', 'bank', 'crypto')),
+  reference text not null,
+  status text not null default 'pending' check (status in ('pending', 'paid')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.payment_settings enable row level security;
+alter table public.payment_requests enable row level security;
+
+drop policy if exists payment_settings_select on public.payment_settings;
+create policy payment_settings_select on public.payment_settings
+  for select using (true);
+
+drop policy if exists payment_requests_select on public.payment_requests;
+create policy payment_requests_select on public.payment_requests
+  for select using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists payment_requests_insert on public.payment_requests;
+create policy payment_requests_insert on public.payment_requests
+  for insert with check (
+    auth.uid() = user_id
+    and status = 'pending'
+  );
+
+grant select on public.payment_settings to anon, authenticated;
+grant select, insert on public.payment_requests to authenticated;

@@ -35,7 +35,7 @@ export function mapProfile(row: Record<string, unknown>): SessionUser {
     mobile: text(row.mobile),
     country: text(row.country),
     countryCode: text(row.country_code),
-    role: row.role === 'admin' ? 'admin' : 'student',
+    role: row.role === 'admin' || row.role === 'superadmin' ? row.role : 'student',
     avatar: text(row.avatar) || undefined,
     createdAt: text(row.created_at, new Date().toISOString()),
     emailPreferences: {
