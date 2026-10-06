@@ -1,4 +1,4 @@
-import { BRAND } from './brand.ts'
+import { BRAND } from './brand.js'
 
 interface ChatBody {
   messages?: Array<{

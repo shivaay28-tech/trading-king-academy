@@ -1,4 +1,4 @@
-import { proxyEngineChat } from './engineChatCore.ts'
+import { proxyEngineChat } from './engineChatCore.js'
 import { fetchTradingViewQuotes } from './tradingViewQuotes.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
