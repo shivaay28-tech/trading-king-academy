@@ -1,4 +1,4 @@
-import { BRAND } from './src/assets/brand.ts'
+import { BRAND } from './server/brand.ts'
 import { engineChatPlugin } from './server/engineChat.ts'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
