@@ -55,7 +55,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        'flex h-full flex-col border-r border-bright/15 bg-navy/90 text-ink shadow-[inset_-1px_0_0_rgb(92_225_255_/_0.12)] backdrop-blur-xl transition-all duration-200',
+        'flex h-full flex-col border-r border-bright/15 bg-navy/90 text-ink shadow-[inset_-1px_0_0_rgb(var(--glow)_/_0.12)] backdrop-blur-xl transition-all duration-200',
         collapsed ? 'w-[76px]' : 'w-[280px]',
       )}
     >
@@ -104,7 +104,7 @@ export function Sidebar({
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold',
-                isActive ? 'bg-baazex text-ink' : 'text-ink/70 hover:bg-white/8 hover:text-ink',
+                isActive ? 'bg-baazex text-on-button' : 'text-ink/70 hover:bg-white/8 hover:text-ink',
                 collapsed && 'justify-center px-0',
               )
             }
@@ -150,7 +150,7 @@ export function Sidebar({
 
       <div className="border-t border-white/10 p-3">
         <div className={cn('flex items-center gap-3 rounded-xl bg-white/5 p-2', collapsed && 'justify-center')}>
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-baazex text-xs font-bold">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-baazex text-xs font-bold text-on-button">
             {initials(user?.fullName ?? 'BA')}
           </span>
           {collapsed ? null : (

@@ -70,7 +70,7 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition',
-        active ? 'bg-baazex text-ink shadow-float' : 'bg-white/5 text-muted hover:text-ink',
+        active ? 'bg-baazex text-on-button shadow-float' : 'bg-white/5 text-muted hover:text-ink',
       )}
     >
       {children}

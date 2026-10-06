@@ -37,7 +37,7 @@ export function CategoryCard({
       to={`/categories/${category.slug}`}
       className="group panel flex h-full flex-col rounded-2xl p-5 transition hover:-translate-y-1 hover:border-bright/40 hover:shadow-float"
     >
-      <span className="grid h-11 w-11 place-items-center rounded-2xl border border-bright/20 bg-white/6 text-accent group-hover:bg-baazex group-hover:text-ink">
+      <span className="grid h-11 w-11 place-items-center rounded-2xl border border-bright/20 bg-white/6 text-accent group-hover:bg-baazex group-hover:text-on-button">
         <Icon className="h-5 w-5" />
       </span>
       <h3 className="mt-4 text-base font-bold text-ink">{category.name}</h3>

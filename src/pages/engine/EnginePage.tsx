@@ -424,7 +424,7 @@ export function EnginePage() {
         >
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ background: 'radial-gradient(900px 320px at 50% -10%, rgb(0 102 255 / 0.2), transparent 58%)' }}
+            style={{ background: 'radial-gradient(900px 320px at 50% -10%, rgb(var(--glow) / 0.2), transparent 58%)' }}
           />
           {empty ? (
             <div className="relative mx-auto flex max-w-3xl flex-col items-center px-4 py-6 text-center sm:py-14">
@@ -614,7 +614,7 @@ export function EnginePage() {
               Five free questions are included. Basic is ${BASIC_PRICE} and adds 200 questions, plus a free {APP_SHORT_NAME} trading account.
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <button type="button" className="h-11 rounded-xl bg-baazex font-semibold text-ink" onClick={confirmBasic}>
+              <button type="button" className="h-11 rounded-xl bg-baazex font-semibold text-on-button" onClick={confirmBasic}>
                 {user ? `Confirm Basic — $${BASIC_PRICE}` : 'Create an account to get Basic'}
               </button>
               {user ? null : (

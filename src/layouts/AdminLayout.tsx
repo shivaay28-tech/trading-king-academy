@@ -38,7 +38,7 @@ export function AdminLayout() {
                 to={item.to}
                 end={item.to === '/admin'}
                 className={({ isActive }) =>
-                  `shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${isActive ? 'bg-baazex text-ink shadow-float' : 'text-muted hover:bg-white/8 hover:text-ink'}`
+                  `shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${isActive ? 'bg-baazex text-on-button shadow-float' : 'text-muted hover:bg-white/8 hover:text-ink'}`
                 }
               >
                 {item.label}

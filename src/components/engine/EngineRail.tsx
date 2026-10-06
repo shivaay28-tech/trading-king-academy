@@ -31,7 +31,7 @@ export function EngineRail() {
           <li className="flex gap-2"><Shield className="mt-0.5 h-4 w-4 text-accent" /> Results are not guaranteed</li>
           <li className="flex gap-2"><MonitorSmartphone className="mt-0.5 h-4 w-4 text-accent" /> Chart and video study tools</li>
         </ul>
-        <Link to="/courses" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-baazex text-sm font-bold text-ink hover:bg-baazex-600">
+        <Link to="/courses" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-baazex text-sm font-bold text-on-button hover:bg-baazex-600">
           Open courses
         </Link>
         <a href={COMPANY_URL} className="mt-2 flex h-10 items-center justify-center text-xs font-semibold text-muted hover:text-accent">

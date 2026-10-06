@@ -73,7 +73,7 @@ export function CourseCard({
         ) : null}
         <Link
           to={openPath}
-          className="mt-5 inline-flex h-10 items-center justify-center rounded-xl border border-bright/20 bg-navy text-sm font-semibold text-ink transition hover:border-bright/40 hover:bg-baazex hover:shadow-float"
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-xl border border-bright/20 bg-navy text-sm font-semibold text-ink transition hover:border-bright/40 hover:bg-baazex hover:text-on-button hover:shadow-float"
         >
           {enrolled ? 'Continue' : 'View Course'}
         </Link>

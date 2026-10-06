@@ -16,7 +16,7 @@ export function Select({ label, error, options, className, id, ...props }: Selec
         id={selectId}
         className={cn(
           'h-11 w-full rounded-xl border bg-white/5 px-3.5 text-sm text-ink outline-none transition',
-          error ? 'border-danger' : 'border-line focus:border-bright focus:shadow-[0_0_0_3px_rgb(92_225_255_/_0.15)]',
+          error ? 'border-danger' : 'border-line focus:border-bright focus:shadow-[0_0_0_3px_rgb(var(--glow)_/_0.15)]',
           className,
         )}
         {...props}

@@ -20,7 +20,7 @@ export function Header() {
   const { user } = useAuth()
 
   return (
-    <header className="sticky top-0 z-40 border-b border-baazex/15 bg-white/90 shadow-[0_12px_40px_-24px_rgb(0_102_255_/_0.45)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-baazex/15 bg-white/90 shadow-[0_12px_40px_-24px_rgb(var(--glow)_/_0.45)] backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
         <Link to="/" aria-label={`${APP_NAME} home`}>
           <Logo />
@@ -34,7 +34,7 @@ export function Header() {
               className={({ isActive }) =>
                 cn(
                   'rounded-lg px-3 py-2 text-sm font-semibold tracking-wide transition',
-                  isActive ? 'bg-baazex text-ink shadow-float' : 'text-ink/70 hover:text-accent',
+                  isActive ? 'bg-baazex text-on-button shadow-float' : 'text-ink/70 hover:text-accent',
                 )
               }
             >
@@ -53,7 +53,7 @@ export function Header() {
               </Link>
               <Link
                 to="/engine"
-                className="inline-flex h-9 items-center rounded-lg bg-baazex px-4 text-sm font-semibold text-ink shadow-float hover:bg-baazex-600"
+                className="inline-flex h-9 items-center rounded-lg bg-baazex px-4 text-sm font-semibold text-on-button shadow-float hover:bg-baazex-600"
               >
                 Open AI Engine
               </Link>
@@ -65,7 +65,7 @@ export function Header() {
               </Link>
               <Link
                 to="/register"
-                className="inline-flex h-9 items-center rounded-lg bg-baazex px-4 text-sm font-semibold text-ink shadow-float hover:bg-baazex-600"
+                className="inline-flex h-9 items-center rounded-lg bg-baazex px-4 text-sm font-semibold text-on-button shadow-float hover:bg-baazex-600"
               >
                 Start Learning
               </Link>
@@ -99,7 +99,7 @@ export function Header() {
                 <Link
                   to="/engine"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl bg-baazex px-4 py-3 text-center text-sm font-semibold text-ink"
+                  className="rounded-xl bg-baazex px-4 py-3 text-center text-sm font-semibold text-on-button"
                 >
                   Open AI Engine
                 </Link>
@@ -111,7 +111,7 @@ export function Header() {
                   <Link
                     to="/register"
                     onClick={() => setOpen(false)}
-                    className="rounded-xl bg-baazex px-4 py-3 text-center text-sm font-semibold text-ink"
+                    className="rounded-xl bg-baazex px-4 py-3 text-center text-sm font-semibold text-on-button"
                   >
                     Start Learning
                   </Link>

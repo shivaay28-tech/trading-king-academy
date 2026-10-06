@@ -24,7 +24,7 @@ export function Input({ label, error, hint, trailing, className, id, type, ...pr
           type={resolvedType}
           className={cn(
             'h-11 w-full rounded-xl border bg-white/5 px-3.5 text-sm text-ink outline-none transition placeholder:text-muted/70',
-            error ? 'border-danger' : 'border-line focus:border-bright focus:shadow-[0_0_0_3px_rgb(92_225_255_/_0.15)]',
+            error ? 'border-danger' : 'border-line focus:border-bright focus:shadow-[0_0_0_3px_rgb(var(--glow)_/_0.15)]',
             (isPassword || Boolean(trailing)) && 'pr-11',
             className,
           )}

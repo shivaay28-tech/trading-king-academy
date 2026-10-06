@@ -109,7 +109,7 @@ export function EngineSidebar({
       <div className="border-t border-white/8 p-3">
         {user ? (
           <Link to="/profile" className="flex items-center gap-3 rounded-xl bg-white/5 p-2 hover:bg-white/8">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-baazex text-xs font-bold">{user.fullName.slice(0, 1)}</span>
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-baazex text-xs font-bold text-on-button">{user.fullName.slice(0, 1)}</span>
             {collapsed ? null : (
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold">{user.fullName}</span>

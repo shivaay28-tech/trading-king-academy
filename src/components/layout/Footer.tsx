@@ -37,7 +37,7 @@ const columns = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-bright/15 bg-navy text-ink shadow-[inset_0_1px_0_rgb(92_225_255_/_0.18)]">
+    <footer className="border-t border-bright/15 bg-navy text-ink shadow-[inset_0_1px_0_rgb(var(--glow)_/_0.18)]">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-12 lg:gap-10">
         <div className="col-span-2 lg:col-span-4">
           <Logo light />

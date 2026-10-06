@@ -122,7 +122,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)] sm:py-16">
+      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(var(--glow)_/_0.08)] sm:py-16">
         <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <p className="text-xs font-bold tracking-[0.18em] text-ink uppercase">AI Engine</p>
@@ -201,7 +201,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.08)] sm:py-16">
+      <section className="border-y border-bright/15 bg-navy/80 py-10 text-ink shadow-[inset_0_0_80px_rgb(var(--glow)_/_0.08)] sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading kicker="How it works" title="Four steps from account to certificate" light />
           <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-4">

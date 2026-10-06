@@ -93,7 +93,7 @@ export function DashboardPage() {
       ) : null}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
-        <article className="rounded-3xl border border-bright/25 bg-navy p-6 text-ink shadow-[inset_0_0_80px_rgb(0_163_255_/_0.12)] lg:col-span-2">
+        <article className="rounded-3xl border border-bright/25 bg-navy p-6 text-ink shadow-[inset_0_0_80px_rgb(var(--glow)_/_0.12)] lg:col-span-2">
           <p className="text-xs font-bold tracking-[0.16em] text-ink uppercase">Continue learning</p>
           {continueCourse ? (
             <>

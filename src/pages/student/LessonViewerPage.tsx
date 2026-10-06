@@ -128,7 +128,7 @@ export function LessonViewerPage() {
         </div>
 
         <div className="mx-auto max-w-3xl px-4 py-8">
-          <div className="overflow-hidden rounded-3xl border border-bright/20 bg-navy shadow-[inset_0_0_80px_rgb(0_163_255_/_0.12)]">
+          <div className="overflow-hidden rounded-3xl border border-bright/20 bg-navy shadow-[inset_0_0_80px_rgb(var(--glow)_/_0.12)]">
             <div className="flex aspect-video items-center justify-center bg-linear-to-br from-navy via-navy-700 to-baazex">
               <div className="text-center text-ink">
                 <p className="text-xs tracking-[0.18em] text-ink uppercase">Lesson media</p>

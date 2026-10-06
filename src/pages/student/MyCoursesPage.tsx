@@ -36,7 +36,7 @@ export function MyCoursesPage() {
             key={item}
             type="button"
             onClick={() => setTab(item)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${tab === item ? 'bg-baazex text-ink shadow-float' : 'border border-white/10 bg-white/5 text-muted'}`}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${tab === item ? 'bg-baazex text-on-button shadow-float' : 'border border-white/10 bg-white/5 text-muted'}`}
           >
             {item}
           </button>
@@ -55,7 +55,7 @@ export function MyCoursesPage() {
             title="Nothing in this list yet"
             description="Enrol from the catalogue or save a course to see it here."
             action={
-              <Link to="/courses" className="rounded-xl bg-baazex px-4 py-2 text-sm font-semibold text-ink">
+              <Link to="/courses" className="rounded-xl bg-baazex px-4 py-2 text-sm font-semibold text-on-button">
                 Browse courses
               </Link>
             }

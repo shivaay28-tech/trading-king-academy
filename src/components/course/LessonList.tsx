@@ -70,7 +70,7 @@ function LessonRow({
       <span
         className={cn(
           'grid h-7 w-7 place-items-center rounded-full text-[11px]',
-          completed ? 'bg-success/10 text-success' : current ? 'bg-baazex text-ink' : 'border border-white/10 bg-white/5 text-muted',
+          completed ? 'bg-success/10 text-success' : current ? 'bg-baazex text-on-button' : 'border border-white/10 bg-white/5 text-muted',
         )}
       >
         {completed ? <Check className="h-3.5 w-3.5" /> : enrolled ? lesson.order : <Lock className="h-3.5 w-3.5" />}
