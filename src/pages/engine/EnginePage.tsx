@@ -42,6 +42,9 @@ export function EnginePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLInputElement>(null)
   const threadRef = useRef<HTMLDivElement>(null)
+  const screenStreamRef = useRef<MediaStream | null>(null)
+  const screenPreviewRef = useRef<HTMLVideoElement>(null)
+  const [sharingScreen, setSharingScreen] = useState(false)
 
   const plan = user?.plan === 'basic' ? 'basic' : 'free'
   const remaining = conversationService.remaining(plan, user?.id)
@@ -104,6 +107,21 @@ export function EnginePage() {
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' })
   }, [threadCount, sending])
+
+  useEffect(() => {
+    return () => {
+      screenStreamRef.current?.getTracks().forEach((track) => track.stop())
+      screenStreamRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const video = screenPreviewRef.current
+    const display = screenStreamRef.current
+    if (!sharingScreen || !video || !display) return
+    video.srcObject = display
+    void video.play().catch(() => undefined)
+  }, [sharingScreen])
 
   async function generateReply(
     conversationId: string,
@@ -255,24 +273,66 @@ export function EnginePage() {
     return canvas.toDataURL('image/jpeg', 0.72)
   }
 
+  function stopScreenShare() {
+    const display = screenStreamRef.current
+    screenStreamRef.current = null
+    setSharingScreen(false)
+    display?.getTracks().forEach((track) => track.stop())
+  }
+
   async function shareScreen() {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
-      const video = document.createElement('video')
-      video.srcObject = stream
-      await video.play()
-      await new Promise((resolve) => window.setTimeout(resolve, 400))
-      const frame = captureFrame(video, video.videoWidth, video.videoHeight)
-      stream.getTracks().forEach((track) => track.stop())
-      if (!frame) return
-      setPendingFiles((current) => [
-        ...current,
-        { id: uid('att'), name: 'screen-frame.jpg', mime: 'image/jpeg', dataUrl: frame, kind: 'image' },
-      ])
-      push('success', 'Screen frame captured', 'Send the symbol, timeframe, and last price with this chart.')
+      stopScreenShare()
+      const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+      display.getVideoTracks().forEach((track) => {
+        track.addEventListener('ended', () => {
+          if (screenStreamRef.current !== display) return
+          screenStreamRef.current = null
+          setSharingScreen(false)
+        })
+      })
+      screenStreamRef.current = display
+      setSharingScreen(true)
     } catch {
       push('info', 'Screen share cancelled')
     }
+  }
+
+  async function startScreenAnalysis() {
+    const display = screenStreamRef.current
+    const video = screenPreviewRef.current
+    if (!display || !video) return
+    if (remaining <= 0) {
+      setCreditsOpen(true)
+      return
+    }
+    if (video.srcObject !== display) {
+      video.srcObject = display
+      await video.play().catch(() => undefined)
+    }
+    if (video.videoWidth === 0) {
+      await new Promise((resolve) => {
+        video.onloadeddata = () => resolve(undefined)
+        window.setTimeout(resolve, 800)
+      })
+    }
+    const frame = captureFrame(video, video.videoWidth, video.videoHeight)
+    stopScreenShare()
+    if (!frame) {
+      push('info', 'Could not read the shared screen')
+      return
+    }
+    const attachment: AiAttachment = {
+      id: uid('att'),
+      name: 'screen-frame.jpg',
+      mime: 'image/jpeg',
+      dataUrl: frame,
+      kind: 'image',
+    }
+    const prompt =
+      draft.trim() ||
+      'Read this shared screen as an educational chart worksheet. Describe the structure that is visible. This is study material, not a trade instruction.'
+    await sendPrompt(prompt, [attachment])
   }
 
   async function sendPrompt(prompt: string, attachments = pendingFiles) {
@@ -532,6 +592,38 @@ export function EnginePage() {
               </button>
             ))}
           </div>
+          {sharingScreen ? (
+            <div className="mx-auto mb-3 flex max-w-3xl flex-wrap items-center gap-3 rounded-2xl border border-line bg-white p-3">
+              <video
+                ref={screenPreviewRef}
+                muted
+                playsInline
+                autoPlay
+                className="h-16 w-28 shrink-0 rounded-lg bg-ink/5 object-contain"
+              />
+              <div className="min-w-[10rem] flex-1">
+                <p className="text-sm font-semibold text-ink">Sharing your screen</p>
+                <p className="text-xs text-muted">Open the chart you want to share, then start the analysis.</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void startScreenAnalysis()}
+                  disabled={sending}
+                  className="h-10 shrink-0 rounded-xl bg-baazex px-3 text-sm font-semibold text-on-button disabled:opacity-60"
+                >
+                  Start analysis
+                </button>
+                <button
+                  type="button"
+                  onClick={stopScreenShare}
+                  className="h-10 shrink-0 rounded-xl border border-line px-3 text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
           {pendingFiles.length ? (
             <div className="mx-auto mb-2 flex max-w-3xl gap-2 overflow-x-auto">
               {pendingFiles.map((file) => (
