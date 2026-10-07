@@ -151,8 +151,9 @@ export function EnginePage() {
       if (last?.role === 'assistant') return
 
       const namedInText = symbolsInText(userMessage.content)
-      const chartSetsSymbol = userMessage.attachments.some((item) => item.kind === 'image') && namedInText.length === 0
-      const mentioned = chartSetsSymbol ? [] : symbolsInText(userMessage.content, symbol ?? instrument)
+      const hasChartImage = userMessage.attachments.some((item) => item.kind === 'image')
+      const chartSetsSymbol = hasChartImage && namedInText.length === 0
+      const mentioned = hasChartImage ? namedInText : symbolsInText(userMessage.content, symbol ?? instrument)
       const have = new Set(quotesRef.current.map((item) => item.symbol))
       const missing = mentioned.filter((item) => !have.has(item))
       if (missing.length) {
@@ -180,11 +181,15 @@ export function EnginePage() {
       await aiService.askStream(
         {
           prompt: userMessage.content,
-          instrument: chartSetsSymbol ? undefined : symbol ?? instrument,
+          instrument: chartSetsSymbol ? undefined : hasChartImage ? namedInText[0] : symbol ?? instrument,
           attachments: userMessage.attachments,
           answerLength: 'standard',
           history: (existing?.messages ?? []).map((item) => ({ role: item.role, content: item.content })),
-          liveQuotes: chartSetsSymbol ? [] : quotesRef.current,
+          liveQuotes: chartSetsSymbol
+            ? []
+            : hasChartImage
+              ? quotesRef.current.filter((item) => namedInText.includes(item.symbol))
+              : quotesRef.current,
         },
         (token) => {
           output += token
@@ -430,6 +435,8 @@ export function EnginePage() {
         window.setTimeout(resolve, 800)
       })
     }
+    closeAnalysisPopup()
+    await new Promise((resolve) => window.setTimeout(resolve, 700))
     const frame = captureFrame(video, video.videoWidth, video.videoHeight)
     stopScreenShare()
     if (!frame) {
@@ -445,7 +452,7 @@ export function EnginePage() {
     }
     const prompt =
       draft.trim() ||
-      'Read the symbol and timeframe printed on this shared chart. Analyse that symbol only, and use the last price shown on the chart. A gold chart is XAUUSD. Do not switch to another pair. This is study material, not a trade instruction.'
+      'Read this shared chart.'
     await sendPrompt(prompt, [attachment])
   }
 

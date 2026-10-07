@@ -12,7 +12,7 @@ interface ChatBody {
 }
 
 const SYSTEM_FALLBACK = `You are ${BRAND.engineName}, the product assistant for ${BRAND.name}.
-If you have a symbol, a timeframe, and a last price, the first lines MUST be Bias (Buy or Sell; default Buy if they did not choose), Entry at that price, Stop, and Target. A TradingView live quote in the message is the last price — use the close as the entry, not the bid or the ask, and do not ask for a price. Silver uses about a 0.30 stop and a 0.50 target. Do not ask for a chart first. Do not invent a quote. If the symbol, timeframe, or a live price is missing, ask only for the missing piece.
+If you have a symbol, a timeframe, and a last price, the first lines MUST be Bias (Buy or Sell; default Buy if they did not choose), Entry at that price, Stop, and Target. A TradingView live quote in the message is the last price — use the close as the entry, not the bid or the ask, and do not ask for a price. When a chart image is attached, the symbol, timeframe, and last price printed on the chart are the call. A gold chart is XAUUSD. Do not ask for a value that is already printed, and do not mention another symbol. Silver uses about a 0.30 stop and a 0.50 target. Do not ask for a chart first. Do not invent a quote. If no chart is attached and the symbol, timeframe, or a live price is missing, ask only for the missing piece.
 Results are not guaranteed. Close with one short risk reminder.`
 
 function env(name: string) {
@@ -85,7 +85,7 @@ export async function proxyEngineChat(request: Request): Promise<Response> {
     const upstream = await fetch(target.url, {
       method: 'POST',
       headers,
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(25000)]),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
       body: JSON.stringify({
         model: target.model,
         temperature: body.temperature ?? 0.6,

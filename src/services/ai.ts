@@ -31,8 +31,8 @@ When the user asks about a market and you have a symbol, a timeframe, and a last
 - One short reason from how that product is quoted, which session matters, and what usually moves it
 
 A TradingView live quote in the message is the last price. Use that close as the entry and do not ask for a price that is already quoted.
-When a chart image is attached and the message does not name a symbol, the symbol, timeframe, and last price printed on the chart are the ones for this answer. That label wins over every other symbol. A gold chart is XAUUSD. Use the price shown on the chart. Do not analyse a different pair.
-If the symbol, timeframe, or a live price is missing, ask only for the missing piece and do not invent a quote.
+When a chart image is attached, ignore every other symbol. The first lines MUST be the call for the symbol, timeframe, and last price printed on that chart. A gold chart is XAUUSD. A label of 1D means daily. The close printed on the chart is the entry. Do not ask for a symbol, timeframe, or price that is already printed. Do not mention any other symbol.
+If no chart image is attached and the symbol, timeframe, or a live price is missing, ask only for the missing piece and do not invent a quote.
 Do not invent candle prices you cannot see. Results are not guaranteed. Close with one short risk reminder.`
 
 export type EngineTopic =
@@ -111,8 +111,9 @@ function chartImageSetsSymbol(input: AskInput) {
 
 function parseQuestion(input: AskInput) {
   const prior = previousUserText(input.history, input.prompt)
+  const hasImage = input.attachments.some((item) => item.kind === 'image')
   const chartLabel = chartImageSetsSymbol(input)
-  const symbols = chartLabel
+  const symbols = hasImage
     ? detectSymbols(input.prompt)
     : detectSymbols(`${input.prompt} ${input.instrument ?? ''} ${prior}`, input.instrument)
   let topics = detectTopics(input.prompt, input.attachments.length > 0)
@@ -228,7 +229,7 @@ function chartSection(reads: ChartRead[], symbols: string[]) {
     bullets([
       `A series that is higher to the right is a buy bias. Lower to the right is a sell bias${symbolText}.`,
       'The stop belongs beyond the last obvious swing against that bias. The target is the next swing in the direction of the bias.',
-      'A chart image does not contain a trustworthy last price. Levels are only printed when you also give the last price.',
+      'When a last price is printed on the chart, that close is the entry.',
     ]),
   ].join('\n\n')
 }
@@ -343,10 +344,28 @@ function callSection(input: AskInput, symbols: string[], reads: ChartRead[]) {
   return targets.map((symbol) => oneCall(input, symbol, context, reads, typedPrice)).join('\n\n')
 }
 
+function chartOnlyReply(reads: ChartRead[]) {
+  const bias = detectBias('', reads[0]?.slope)
+  return [
+    heading('Chart call'),
+    'The symbol, timeframe, and last price are the ones printed on the chart. A gold chart is XAUUSD.',
+    bullets([
+      `Bias: ${bias === 'buy' ? 'Buy' : 'Sell'}`,
+      'Entry: the last price printed on the chart',
+      'Stop and target sit beyond the last swing against that bias',
+    ]),
+    reads[0]?.note ?? '',
+    DISCLAIMER,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
 async function composeReply(input: AskInput) {
+  const reads = await inspectAttachments(input.attachments)
+  if (chartImageSetsSymbol(input)) return chartOnlyReply(reads)
   const parsed = parseQuestion(input)
   const brief = input.answerLength === 'brief'
-  const reads = await inspectAttachments(input.attachments)
   const sections: string[] = [answerLead(input.prompt, parsed.symbols, parsed.followUp)]
 
   if (marketQuestion(parsed.topics, parsed.symbols)) {
@@ -406,7 +425,7 @@ function quoteBlock(quotes: LiveQuote[] | undefined) {
 }
 
 function userContent(input: AskInput, chartNote: string) {
-  const images = input.attachments.filter((item) => item.kind === 'image' && item.dataUrl.length < 420_000).slice(0, 2)
+  const images = input.attachments.filter((item) => item.kind === 'image' && item.dataUrl.length < 1_200_000).slice(0, 2)
   const chartLabel = chartImageSetsSymbol(input)
   const text = [
     chartLabel ? '' : quoteBlock(input.liveQuotes),
@@ -511,7 +530,11 @@ export const aiService = {
     onThinking?: (token: string) => void,
   ) {
     const reads = await inspectAttachments(input.attachments)
-    const chartNote = reads.length ? reads.map((item) => item.note).join(' ') : ''
+    const chartNote = reads.length
+      ? chartImageSetsSymbol(input)
+        ? `Visible swing on the attached chart: ${reads.map((item) => item.slope).join(', ')}.`
+        : reads.map((item) => item.note).join(' ')
+      : ''
     const messages = [
       { role: 'system', content: SYSTEM_RULES },
       ...historyWithoutDuplicate(input).map((item) => ({ role: item.role, content: item.content })),
@@ -542,9 +565,10 @@ export const aiService = {
       },
     ]
 
+    const hasImage = input.attachments.some((item) => item.kind === 'image')
     for (const attempt of attempts) {
       try {
-        const timeout = AbortSignal.timeout(20000)
+        const timeout = AbortSignal.timeout(hasImage ? 55000 : 20000)
         const combined = signal
           ? AbortSignal.any([signal, timeout])
           : timeout
@@ -556,7 +580,15 @@ export const aiService = {
         })
         if (!response.ok) continue
         const type = response.headers.get('content-type') ?? ''
-        if (type.includes('application/json') && !type.includes('event-stream')) continue
+        if (type.includes('application/json') && !type.includes('event-stream')) {
+          const payload = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string | null } }>
+          }
+          const text = payload.choices?.[0]?.message?.content ?? ''
+          if (!text.trim()) continue
+          onToken(text)
+          return text
+        }
         return await readSseStream(response, onToken, combined, onThinking)
       } catch {
         if (signal?.aborted) return ''
