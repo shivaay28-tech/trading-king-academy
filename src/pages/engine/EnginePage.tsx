@@ -43,8 +43,11 @@ export function EnginePage() {
   const videoRef = useRef<HTMLInputElement>(null)
   const threadRef = useRef<HTMLDivElement>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
+  const screenCaptureRef = useRef<HTMLVideoElement>(null)
   const screenPreviewRef = useRef<HTMLVideoElement>(null)
+  const screenPopupRef = useRef<Window | null>(null)
   const [sharingScreen, setSharingScreen] = useState(false)
+  const [analysisPopup, setAnalysisPopup] = useState(false)
 
   const plan = user?.plan === 'basic' ? 'basic' : 'free'
   const remaining = conversationService.remaining(plan, user?.id)
@@ -110,18 +113,22 @@ export function EnginePage() {
 
   useEffect(() => {
     return () => {
+      screenPopupRef.current?.close()
+      screenPopupRef.current = null
       screenStreamRef.current?.getTracks().forEach((track) => track.stop())
       screenStreamRef.current = null
     }
   }, [])
 
   useEffect(() => {
-    const video = screenPreviewRef.current
     const display = screenStreamRef.current
-    if (!sharingScreen || !video || !display) return
-    video.srcObject = display
-    void video.play().catch(() => undefined)
-  }, [sharingScreen])
+    if (!sharingScreen || !display) return
+    for (const video of [screenCaptureRef.current, screenPreviewRef.current]) {
+      if (!video) continue
+      video.srcObject = display
+      void video.play().catch(() => undefined)
+    }
+  }, [sharingScreen, analysisPopup])
 
   async function generateReply(
     conversationId: string,
@@ -273,26 +280,130 @@ export function EnginePage() {
     return canvas.toDataURL('image/jpeg', 0.72)
   }
 
+  function closeAnalysisPopup() {
+    const popup = screenPopupRef.current
+    screenPopupRef.current = null
+    setAnalysisPopup(false)
+    if (popup && !popup.closed) popup.close()
+  }
+
   function stopScreenShare() {
+    closeAnalysisPopup()
     const display = screenStreamRef.current
     screenStreamRef.current = null
     setSharingScreen(false)
     display?.getTracks().forEach((track) => track.stop())
   }
 
+  function fillAnalysisPopup(popup: Window, display: MediaStream) {
+    const doc = popup.document
+    doc.title = 'Start analysis'
+    doc.body.replaceChildren()
+    doc.body.style.margin = '0'
+    doc.body.style.background = '#f7f4ee'
+    doc.body.style.color = '#1c1408'
+    doc.body.style.fontFamily = 'Inter, system-ui, sans-serif'
+    const wrap = doc.createElement('div')
+    wrap.style.padding = '12px'
+    const video = doc.createElement('video')
+    video.srcObject = display
+    video.muted = true
+    video.autoplay = true
+    video.playsInline = true
+    video.style.display = 'block'
+    video.style.width = '100%'
+    video.style.height = '160px'
+    video.style.objectFit = 'contain'
+    video.style.borderRadius = '12px'
+    video.style.background = '#1c1408'
+    const note = doc.createElement('p')
+    note.textContent = 'Switch to the one screen you want, then start the analysis. Only that shared screen is read.'
+    note.style.margin = '10px 0'
+    note.style.fontSize = '13px'
+    note.style.lineHeight = '1.4'
+    const row = doc.createElement('div')
+    row.style.display = 'flex'
+    row.style.gap = '8px'
+    const start = doc.createElement('button')
+    start.type = 'button'
+    start.textContent = 'Start analysis'
+    start.style.flex = '1'
+    start.style.height = '40px'
+    start.style.border = '0'
+    start.style.borderRadius = '12px'
+    start.style.background = '#c4a35a'
+    start.style.color = '#1c1408'
+    start.style.fontWeight = '700'
+    start.onclick = () => {
+      void startScreenAnalysis()
+    }
+    const cancel = doc.createElement('button')
+    cancel.type = 'button'
+    cancel.textContent = 'Cancel'
+    cancel.style.height = '40px'
+    cancel.style.padding = '0 14px'
+    cancel.style.borderRadius = '12px'
+    cancel.style.border = '1px solid #e6d7b8'
+    cancel.style.background = '#fff'
+    cancel.style.fontWeight = '700'
+    cancel.onclick = () => stopScreenShare()
+    row.append(start, cancel)
+    wrap.append(video, note, row)
+    doc.body.append(wrap)
+    void video.play().catch(() => undefined)
+    popup.addEventListener('pagehide', () => {
+      if (screenPopupRef.current !== popup) return
+      screenPopupRef.current = null
+      setAnalysisPopup(false)
+      const current = screenStreamRef.current
+      screenStreamRef.current = null
+      setSharingScreen(false)
+      current?.getTracks().forEach((track) => track.stop())
+    })
+  }
+
+  async function openAnalysisPopup(display: MediaStream) {
+    const picture = (window as Window & {
+      documentPictureInPicture?: { requestWindow: (options?: { width?: number; height?: number }) => Promise<Window> }
+    }).documentPictureInPicture
+    try {
+      const popup = picture
+        ? await picture.requestWindow({ width: 380, height: 320 })
+        : window.open('', 'screen-analysis', 'popup=yes,width=380,height=340')
+      if (!popup) return false
+      screenPopupRef.current = popup
+      fillAnalysisPopup(popup, display)
+      popup.focus()
+      setAnalysisPopup(true)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async function shareScreen() {
     try {
       stopScreenShare()
-      const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+      const display = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+        surfaceSwitching: 'include',
+        monitorTypeSurfaces: 'include',
+      } as DisplayMediaStreamOptions)
       display.getVideoTracks().forEach((track) => {
         track.addEventListener('ended', () => {
           if (screenStreamRef.current !== display) return
+          closeAnalysisPopup()
           screenStreamRef.current = null
           setSharingScreen(false)
         })
       })
       screenStreamRef.current = display
       setSharingScreen(true)
+      const opened = await openAnalysisPopup(display)
+      if (!opened) push('info', 'Analysis popup was blocked', 'Use Start analysis on this page after you open the chart.')
     } catch {
       push('info', 'Screen share cancelled')
     }
@@ -300,9 +411,10 @@ export function EnginePage() {
 
   async function startScreenAnalysis() {
     const display = screenStreamRef.current
-    const video = screenPreviewRef.current
+    const video = screenCaptureRef.current
     if (!display || !video) return
     if (remaining <= 0) {
+      window.focus()
       setCreditsOpen(true)
       return
     }
@@ -592,7 +704,8 @@ export function EnginePage() {
               </button>
             ))}
           </div>
-          {sharingScreen ? (
+          <video ref={screenCaptureRef} muted playsInline autoPlay className="pointer-events-none fixed h-px w-px opacity-0" />
+          {sharingScreen && !analysisPopup ? (
             <div className="mx-auto mb-3 flex max-w-3xl flex-wrap items-center gap-3 rounded-2xl border border-line bg-white p-3">
               <video
                 ref={screenPreviewRef}
