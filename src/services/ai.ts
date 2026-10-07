@@ -202,6 +202,7 @@ export interface ChartLabel {
   symbol?: string
   timeframe?: string
   bias?: 'buy' | 'sell'
+  printedPrice?: number
 }
 
 function symbolFromText(text: string) {
@@ -214,9 +215,17 @@ function symbolFromText(text: string) {
     if (index >= 0 && (best === undefined || index < best.index)) best = { symbol: item.symbol, index }
   }
   if (best) return best.symbol
-  if (compact.includes('GOLD')) return 'XAUUSD'
-  if (compact.includes('SILVER')) return 'XAGUSD'
+  if (compact.includes('XAU') || compact.includes('GOLD')) return 'XAUUSD'
+  if (compact.includes('XAG') || compact.includes('SILVER')) return 'XAGUSD'
+  if (compact.includes('SPOT') && compact.includes('DOLLAR')) return 'XAUUSD'
   return undefined
+}
+
+function printedClose(text: string) {
+  const flat = text.replace(/,/g, '')
+  const labeled = flat.match(/C\s*(\d{3,5}\.\d{2,3})/i)
+  const value = labeled ? Number(labeled[1]) : undefined
+  return value && value > 0 ? value : undefined
 }
 
 function parseChartLabel(text: string): ChartLabel | undefined {
@@ -226,8 +235,9 @@ function parseChartLabel(text: string): ChartLabel | undefined {
   const symbol = symbolFromText(symbolLine) ?? symbolFromText(text)
   const timeframe = normalizeTimeframe(symbolLine) ?? normalizeTimeframe(text)
   const bias = detectChartBias(symbolLine) ?? detectChartBias(text)
-  if (!symbol && !timeframe && !bias) return undefined
-  return { symbol, timeframe, bias }
+  const printedPrice = printedClose(symbolLine) ?? printedClose(text)
+  if (!symbol && !timeframe && !bias && printedPrice === undefined) return undefined
+  return { symbol, timeframe, bias, printedPrice }
 }
 
 export interface ChartLevelInput {
@@ -235,52 +245,47 @@ export interface ChartLevelInput {
   timeframe?: string
   bias?: 'buy' | 'sell'
   quote?: LiveQuote
+  rateSource?: 'live' | 'chart'
 }
 
 export function formatChartLevels(input: ChartLevelInput) {
   const title = [input.symbol, input.timeframe].filter(Boolean).join(' ')
+  const bias = input.bias ?? 'sell'
   if (!input.quote || !(input.quote.close > 0)) {
     return {
       priced: false,
       text: [
-        heading(title),
+        heading(title || input.symbol),
         `The live TradingView rate for ${input.symbol} did not load, so no entry, stops, or targets were set.`,
       ].join('\n\n'),
     }
   }
   const price = input.quote.close
-  const live = `Live rate: ${formatLevel(input.symbol, price)}. Change ${input.quote.change.toFixed(2)}%. This is the TradingView close. Bid and ask are not the entry.`
-  if (!input.bias) {
-    return {
-      priced: false,
-      text: [
-        heading(title),
-        live,
-        'The swing on the chart did not set a Buy or Sell side, so stops and targets were not set.',
-        DISCLAIMER,
-      ].join('\n\n'),
-    }
-  }
   const distance = levelDistance(input.symbol, price)
-  const direction = input.bias === 'buy' ? 1 : -1
+  const direction = bias === 'buy' ? 1 : -1
   const study = INSTRUMENT_STUDY[input.symbol]
   const reason = study
     ? `${study.whatMovesIt} ${instrumentSession(input.symbol) ?? ''}`.trim()
     : 'Stops sit against the bias. Targets sit with the bias.'
+  const rate =
+    input.rateSource === 'chart'
+      ? `Rate: ${formatLevel(input.symbol, price)}. This is the close printed on the chart. Bid and ask are not the entry.`
+      : `Live rate: ${formatLevel(input.symbol, price)}. Change ${input.quote.change.toFixed(2)}%. This is the TradingView close. Bid and ask are not the entry.`
+  const side = bias === 'buy' ? 'Buy' : 'Sell'
   return {
     priced: true,
     text: [
-      heading(title),
+      heading(title || input.symbol),
       bullets([
-        live,
-        `Bias: ${input.bias === 'buy' ? 'Buy' : 'Sell'}`,
+        rate,
+        `Bias: ${side}`,
         `Entry: ${formatLevel(input.symbol, price)}`,
         `SL1: ${formatLevel(input.symbol, price - direction * distance.stop)}`,
         `SL2: ${formatLevel(input.symbol, price - direction * distance.stop * 2)}`,
         `TP1: ${formatLevel(input.symbol, price + direction * distance.target)}`,
         `TP2: ${formatLevel(input.symbol, price + direction * distance.target * 2)}`,
       ]),
-      reason,
+      `${input.symbol}${input.timeframe ? ` ${input.timeframe}` : ''} is a ${side.toLowerCase()} study from the swing on the chart. SL1 is the near stop and SL2 is twice as far. TP1 is the near target and TP2 is twice as far. ${reason}`,
       DISCLAIMER,
     ].join('\n\n'),
   }
@@ -683,17 +688,22 @@ type OcrWorker = {
 let ocrWorker: Promise<OcrWorker> | undefined
 
 async function readHeaderText(dataUrl: string) {
-  const header = await scaleDataUrl(await chartJpeg(dataUrl, 0.24), 2)
+  const header = await scaleDataUrl(await chartJpeg(dataUrl, 0.36), 2)
   if (!ocrWorker) {
     ocrWorker = import('tesseract.js').then(async ({ createWorker, PSM }) => {
-      const worker = await createWorker('eng')
+      const worker = await createWorker('eng', 1, {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
+      })
       await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK })
       return worker
     })
   }
   const worker = await ocrWorker
-  const result = await worker.recognize(header)
-  return result.data.text
+  const headerText = (await worker.recognize(header)).data.text
+  if (symbolFromText(headerText)) return headerText
+  const full = await chartJpeg(dataUrl)
+  const fullText = (await worker.recognize(full)).data.text
+  return `${headerText}\n${fullText}`
 }
 
 async function requestModelText(
@@ -714,7 +724,7 @@ async function requestModelText(
   ]
   for (const attempt of attempts) {
     try {
-      const timeout = AbortSignal.timeout(45000)
+      const timeout = AbortSignal.timeout(12000)
       const combined = signal ? AbortSignal.any([signal, timeout]) : timeout
       const response = await fetch(attempt.url, {
         method: 'POST',
@@ -781,8 +791,9 @@ export const aiService = {
     if (!label?.symbol) return undefined
     if (!label.bias) {
       const reads = await inspectAttachments([{ kind: 'image', dataUrl: prepared }])
-      if (reads[0]?.slope === 'lower to the right') label.bias = 'sell'
-      else if (reads[0]?.slope === 'higher to the right') label.bias = 'buy'
+      const read = reads[0]
+      if (read?.slope === 'lower to the right' || (read && read.redShare >= read.greenShare)) label.bias = 'sell'
+      else label.bias = 'buy'
     }
     return label
   },

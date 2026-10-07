@@ -28,6 +28,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(root, 'src'),
+      'tesseract.js/src/worker/node/index.js': path.resolve(root, 'node_modules/tesseract.js/src/worker/browser/index.js'),
     },
   },
 })

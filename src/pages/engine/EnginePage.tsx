@@ -206,11 +206,18 @@ export function EnginePage() {
               // A failed lookup must not invent a price.
             }
           }
+          const printed = label?.printedPrice
+          const chartQuote =
+            quote ??
+            (printed
+              ? { symbol: chartSymbol, ticker: '', close: printed, change: 0, high: printed, low: printed, bid: printed, ask: printed }
+              : undefined)
           const levels = formatChartLevels({
             symbol: chartSymbol,
             timeframe: label?.timeframe,
             bias: label?.bias,
-            quote,
+            quote: chartQuote,
+            rateSource: quote ? 'live' : 'chart',
           })
           output = levels.text
           priced = levels.priced
