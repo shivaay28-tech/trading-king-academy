@@ -1,3 +1,4 @@
+import { readChartBuffer } from './chartLabel.js'
 import { proxyEngineChat } from './engineChatCore.js'
 import { fetchTradingViewQuotes } from './tradingViewQuotes.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -49,6 +50,31 @@ function requestedSymbols(req: IncomingMessage) {
   return names.length ? names : undefined
 }
 
+function sendChartLabel(req: IncomingMessage, res: ServerResponse) {
+  void readBody(req)
+    .then(async (raw) => {
+      const body = JSON.parse(raw || '{}') as { image?: string }
+      const image = body.image ?? ''
+      const base64 = image.includes(',') ? image.slice(image.indexOf(',') + 1) : image
+      const label = base64 ? await readChartBuffer(Buffer.from(base64, 'base64')) : { symbol: undefined, timeframe: undefined, printedPrice: undefined }
+      res.statusCode = 200
+      res.setHeader('content-type', 'application/json')
+      res.setHeader('cache-control', 'no-store')
+      res.end(
+        JSON.stringify({
+          symbol: label.symbol ?? null,
+          timeframe: label.timeframe ?? null,
+          printedPrice: label.printedPrice ?? null,
+        }),
+      )
+    })
+    .catch(() => {
+      res.statusCode = 500
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ symbol: null, timeframe: null, printedPrice: null }))
+    })
+}
+
 function sendQuotes(req: IncomingMessage, res: ServerResponse) {
   void fetchTradingViewQuotes(requestedSymbols(req))
     .then((quotes) => {
@@ -69,12 +95,14 @@ export function engineChatPlugin(): Plugin {
     name: 'baazex-engine-chat',
     configureServer(server) {
       server.middlewares.use('/api/engine/quotes', sendQuotes)
+      server.middlewares.use('/api/engine/chart-label', sendChartLabel)
       server.middlewares.use('/api/engine/chat', (req, res) => {
         void adapt(req, res)
       })
     },
     configurePreviewServer(server) {
       server.middlewares.use('/api/engine/quotes', sendQuotes)
+      server.middlewares.use('/api/engine/chart-label', sendChartLabel)
       server.middlewares.use('/api/engine/chat', (req, res) => {
         void adapt(req, res)
       })

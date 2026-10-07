@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/engine/chart-label.ts": {
+      "maxDuration": 60,
+      "includeFiles": "{node_modules/tesseract.js/**,node_modules/tesseract.js-core/**}"
+    }
+  }
 }

@@ -617,24 +617,6 @@ async function streamLocal(input: AskInput, onToken: (token: string) => void) {
   return output
 }
 
-const CHART_LABEL_PROMPT = `The image is a trading chart. Reply with one line and nothing else: SYMBOL TIMEFRAME BUY or SELL.
-Read the symbol and timeframe printed on the chart. Gold Spot or XAU is XAUUSD. A printed 15 is 15m. A printed 1 is 1m. 1D means daily.
-SELL when candles are lower toward the right. BUY when candles are higher toward the right. Do not answer BUY when the swing is mixed.
-Do not name a symbol that is not printed on the chart.`
-
-function messageText(content: unknown) {
-  if (typeof content === 'string') return content
-  if (!Array.isArray(content)) return ''
-  return content
-    .map((part) => {
-      if (typeof part === 'string') return part
-      if (part && typeof part === 'object' && 'text' in part && typeof part.text === 'string') return part.text
-      return ''
-    })
-    .filter(Boolean)
-    .join('\n')
-}
-
 function loadHtmlImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image()
@@ -706,52 +688,25 @@ async function readHeaderText(dataUrl: string) {
   return `${headerText}\n${fullText}`
 }
 
-async function requestModelText(
-  messages: Array<{ role: string; content: unknown }>,
-  signal?: AbortSignal,
-) {
-  const attempts: Array<{ url: string; headers: Record<string, string>; body: unknown }> = [
-    {
-      url: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/engine/chat`,
+async function readServerLabel(image: string, signal?: AbortSignal): Promise<ChartLabel | undefined> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/engine/chart-label`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: { messages, model: 'openai', temperature: 0.1 },
-    },
-    {
-      url: 'https://text.pollinations.ai/openai',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer anonymous' },
-      body: { messages, model: 'openai', temperature: 0.1, stream: true },
-    },
-  ]
-  for (const attempt of attempts) {
-    try {
-      const timeout = AbortSignal.timeout(12000)
-      const combined = signal ? AbortSignal.any([signal, timeout]) : timeout
-      const response = await fetch(attempt.url, {
-        method: 'POST',
-        headers: attempt.headers,
-        signal: combined,
-        body: JSON.stringify(attempt.body),
-      })
-      if (!response.ok) continue
-      const type = response.headers.get('content-type') ?? ''
-      let text = ''
-      if (type.includes('application/json') && !type.includes('event-stream')) {
-        const payload = (await response.json()) as {
-          choices?: Array<{ message?: { content?: unknown } }>
-        }
-        text = messageText(payload.choices?.[0]?.message?.content)
-      } else if (!type.includes('event-stream')) {
-        text = await response.text()
-      } else {
-        text = await readSseStream(response, () => undefined, combined)
-      }
-      const label = parseChartLabel(text)
-      if (label?.symbol) return text
-    } catch {
-      if (signal?.aborted) return ''
+      body: JSON.stringify({ image }),
+      signal,
+    })
+    if (!response.ok) return undefined
+    const payload = (await response.json()) as { symbol?: string | null; timeframe?: string | null; printedPrice?: number | null }
+    if (!payload.symbol) return undefined
+    return {
+      symbol: payload.symbol,
+      timeframe: payload.timeframe ?? undefined,
+      printedPrice: payload.printedPrice ?? undefined,
     }
+  } catch {
+    return undefined
   }
-  return ''
 }
 
 export const aiService = {
@@ -773,20 +728,8 @@ export const aiService = {
       ocrWorker = undefined
     }
     if (!label?.symbol && !signal?.aborted) {
-      const header = await chartJpeg(image.dataUrl, 0.28)
-      const text = await requestModelText(
-        [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: CHART_LABEL_PROMPT },
-              { type: 'image_url', image_url: { url: header } },
-            ],
-          },
-        ],
-        signal,
-      )
-      label = parseChartLabel(text)
+      const serverLabel = await readServerLabel(prepared, signal)
+      if (serverLabel?.symbol) label = { ...label, ...serverLabel, symbol: serverLabel.symbol }
     }
     if (!label?.symbol) return undefined
     if (!label.bias) {
