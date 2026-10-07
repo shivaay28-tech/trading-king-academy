@@ -31,6 +31,7 @@ When the user asks about a market and you have a symbol, a timeframe, and a last
 - One short reason from how that product is quoted, which session matters, and what usually moves it
 
 A TradingView live quote in the message is the last price. Use that close as the entry and do not ask for a price that is already quoted.
+When a chart image is attached and the message does not name a symbol, the symbol, timeframe, and last price printed on the chart are the ones for this answer. That label wins over every other symbol. A gold chart is XAUUSD. Use the price shown on the chart. Do not analyse a different pair.
 If the symbol, timeframe, or a live price is missing, ask only for the missing piece and do not invent a quote.
 Do not invent candle prices you cannot see. Results are not guaranteed. Close with one short risk reminder.`
 
@@ -103,12 +104,20 @@ function previousUserText(history: AskInput['history'], prompt: string) {
   return last ?? ''
 }
 
+function chartImageSetsSymbol(input: AskInput) {
+  const hasImage = input.attachments.some((item) => item.kind === 'image')
+  return hasImage && symbolsInText(input.prompt).length === 0
+}
+
 function parseQuestion(input: AskInput) {
   const prior = previousUserText(input.history, input.prompt)
-  const symbols = detectSymbols(`${input.prompt} ${input.instrument ?? ''} ${prior}`, input.instrument)
+  const chartLabel = chartImageSetsSymbol(input)
+  const symbols = chartLabel
+    ? detectSymbols(input.prompt)
+    : detectSymbols(`${input.prompt} ${input.instrument ?? ''} ${prior}`, input.instrument)
   let topics = detectTopics(input.prompt, input.attachments.length > 0)
   const shortFollowUp = input.prompt.trim().length < 48 && input.history.some((item) => item.role === 'assistant')
-  if (topics.length === 0 || shortFollowUp) {
+  if (!chartLabel && (topics.length === 0 || shortFollowUp)) {
     const previous = detectTopics(prior, false)
     for (const topic of previous) topics.push(topic)
     const previousSymbols = detectSymbols(prior)
@@ -398,9 +407,14 @@ function quoteBlock(quotes: LiveQuote[] | undefined) {
 
 function userContent(input: AskInput, chartNote: string) {
   const images = input.attachments.filter((item) => item.kind === 'image' && item.dataUrl.length < 420_000).slice(0, 2)
+  const chartLabel = chartImageSetsSymbol(input)
   const text = [
-    quoteBlock(input.liveQuotes),
-    input.instrument ? `Instrument in focus: ${input.instrument}.` : '',
+    chartLabel ? '' : quoteBlock(input.liveQuotes),
+    chartLabel
+      ? 'A chart image is attached. The symbol, timeframe, and last price printed on the chart are the ones for this answer. That label wins over every other symbol. A gold chart is XAUUSD. Use the price shown on the chart. Do not analyse a different pair.'
+      : input.instrument
+        ? `Instrument in focus: ${input.instrument}.`
+        : '',
     chartNote,
     input.attachments.some((item) => item.kind === 'video') ? 'A video clip was attached; treat sampled frames as a structure worksheet.' : '',
     `Answer length: ${input.answerLength === 'brief' ? 'concise' : 'thorough but readable'}.`,

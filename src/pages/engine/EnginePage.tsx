@@ -150,7 +150,9 @@ export function EnginePage() {
       const last = existing?.messages[existing.messages.length - 1]
       if (last?.role === 'assistant') return
 
-      const mentioned = symbolsInText(userMessage.content, symbol ?? instrument)
+      const namedInText = symbolsInText(userMessage.content)
+      const chartSetsSymbol = userMessage.attachments.some((item) => item.kind === 'image') && namedInText.length === 0
+      const mentioned = chartSetsSymbol ? [] : symbolsInText(userMessage.content, symbol ?? instrument)
       const have = new Set(quotesRef.current.map((item) => item.symbol))
       const missing = mentioned.filter((item) => !have.has(item))
       if (missing.length) {
@@ -178,11 +180,11 @@ export function EnginePage() {
       await aiService.askStream(
         {
           prompt: userMessage.content,
-          instrument: symbol ?? instrument,
+          instrument: chartSetsSymbol ? undefined : symbol ?? instrument,
           attachments: userMessage.attachments,
           answerLength: 'standard',
           history: (existing?.messages ?? []).map((item) => ({ role: item.role, content: item.content })),
-          liveQuotes: quotesRef.current,
+          liveQuotes: chartSetsSymbol ? [] : quotesRef.current,
         },
         (token) => {
           output += token
@@ -443,7 +445,7 @@ export function EnginePage() {
     }
     const prompt =
       draft.trim() ||
-      'Read this shared screen as an educational chart worksheet. Describe the structure that is visible. This is study material, not a trade instruction.'
+      'Read the symbol and timeframe printed on this shared chart. Analyse that symbol only, and use the last price shown on the chart. A gold chart is XAUUSD. Do not switch to another pair. This is study material, not a trade instruction.'
     await sendPrompt(prompt, [attachment])
   }
 
