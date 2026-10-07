@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { instruments } from '@/data/instruments'
 import { symbolsInText, tradingViewTicker } from '@/data/tradingView'
-import { aiService } from '@/services/ai'
+import { aiService, formatChartLevels } from '@/services/ai'
 import { conversationService, newMessage } from '@/services/conversations'
 import { formatLiveQuote, tradingViewService, type LiveQuote } from '@/services/tradingView'
 import type { AiAttachment, AiConversation } from '@/types'
@@ -151,8 +151,8 @@ export function EnginePage() {
       if (last?.role === 'assistant') return
 
       const namedInText = symbolsInText(userMessage.content)
-      const hasChartImage = userMessage.attachments.some((item) => item.kind === 'image')
-      const chartSetsSymbol = hasChartImage && namedInText.length === 0
+      const chartImage = userMessage.attachments.find((item) => item.kind === 'image')
+      const hasChartImage = Boolean(chartImage)
       const mentioned = hasChartImage ? namedInText : symbolsInText(userMessage.content, symbol ?? instrument)
       const have = new Set(quotesRef.current.map((item) => item.symbol))
       const missing = mentioned.filter((item) => !have.has(item))
@@ -178,19 +178,56 @@ export function EnginePage() {
       }
 
       let output = ''
-      await aiService.askStream(
+      let priced = true
+      if (chartImage) {
+        const label = await aiService.readChartLabel(chartImage, abort.signal)
+        const chartSymbol = label?.symbol ?? namedInText[0]
+        if (!chartSymbol) {
+          output = 'The symbol printed on the chart could not be read. Share the chart again.'
+          priced = false
+        } else {
+          let quote = quotesRef.current.find((item) => item.symbol === chartSymbol && item.close > 0)
+          if (!quote) {
+            try {
+              const extra = await Promise.race([
+                tradingViewService.quotes([chartSymbol]),
+                new Promise<LiveQuote[]>((resolve) => window.setTimeout(() => resolve([]), 4000)),
+              ])
+              quote = extra.find((item) => item.symbol === chartSymbol && item.close > 0)
+              if (quote) {
+                const merged = [...quotesRef.current]
+                const index = merged.findIndex((item) => item.symbol === quote?.symbol)
+                if (index >= 0) merged[index] = quote
+                else merged.push(quote)
+                quotesRef.current = merged
+                setQuotes(merged)
+              }
+            } catch {
+              // A failed lookup must not invent a price.
+            }
+          }
+          const levels = formatChartLevels({
+            symbol: chartSymbol,
+            timeframe: label?.timeframe,
+            bias: label?.bias,
+            quote,
+          })
+          output = levels.text
+          priced = levels.priced
+        }
+        streamRef.current = output
+        setStream(output)
+        setThinking('')
+      } else await aiService.askStream(
         {
           prompt: userMessage.content,
-          instrument: chartSetsSymbol ? undefined : hasChartImage ? namedInText[0] : symbol ?? instrument,
+          instrument: symbol ?? instrument,
           attachments: userMessage.attachments,
           answerLength: 'standard',
           history: (existing?.messages ?? []).map((item) => ({ role: item.role, content: item.content })),
-          liveQuotes: chartSetsSymbol
-            ? []
-            : hasChartImage
-              ? quotesRef.current.filter((item) => namedInText.includes(item.symbol))
-              : quotesRef.current,
+          liveQuotes: quotesRef.current,
         },
+
         (token) => {
           output += token
           streamRef.current = output
@@ -205,7 +242,7 @@ export function EnginePage() {
       const latest = conversationService.get(conversationId)
       if (latest?.messages[latest.messages.length - 1]?.role === 'assistant') return
       if (!output.trim()) return
-      await conversationService.consume(user?.id)
+      if (priced) await conversationService.consume(user?.id)
       conversationService.appendMessage(conversationId, newMessage('assistant', output.trim()))
       refreshList()
     } catch (error) {
