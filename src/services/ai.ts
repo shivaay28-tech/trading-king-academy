@@ -190,6 +190,7 @@ function normalizeTimeframe(text: string) {
     [/\b30\b/, '30m'],
     [/\b15\b/, '15m'],
     [/\b5\b/, '5m'],
+    [/\b1\b/, '1m'],
   ]
   for (const [pattern, label] of rules) {
     if (pattern.test(upper)) return label
@@ -204,11 +205,12 @@ export interface ChartLabel {
 }
 
 function parseChartLabel(text: string): ChartLabel | undefined {
-  const line = text.split('\n').map((item) => item.trim()).find(Boolean) ?? ''
-  if (!line) return undefined
-  const symbol = symbolsInText(line)[0]
-  const timeframe = normalizeTimeframe(line)
-  const bias = detectChartBias(line)
+  const lines = text.split('\n').map((item) => item.trim()).filter(Boolean)
+  if (!lines.length) return undefined
+  const symbolLine = lines.find((line) => symbolsInText(line).length > 0) ?? lines.join(' ')
+  const symbol = symbolsInText(symbolLine)[0] ?? symbolsInText(text)[0]
+  const timeframe = normalizeTimeframe(symbolLine) ?? normalizeTimeframe(text)
+  const bias = detectChartBias(symbolLine) ?? detectChartBias(text)
   if (!symbol && !timeframe && !bias) return undefined
   return { symbol, timeframe, bias }
 }
@@ -595,10 +597,51 @@ async function streamLocal(input: AskInput, onToken: (token: string) => void) {
   return output
 }
 
-const CHART_LABEL_PROMPT = `Look at this chart image. Reply with one line only: SYMBOL TIMEFRAME BUY or SELL.
-The symbol and timeframe are the ones printed on the chart. A gold chart is XAUUSD. A printed 15 is 15m. 1D means daily.
-BUY or SELL follows the visible swing. Do not answer BUY just because the swing is mixed.
-Do not name any symbol that is not printed on the chart.`
+const CHART_LABEL_PROMPT = `The image is a trading chart. Reply with one line and nothing else: SYMBOL TIMEFRAME BUY or SELL.
+Read the symbol and timeframe printed on the chart. Gold Spot or XAU is XAUUSD. A printed 15 is 15m. A printed 1 is 1m. 1D means daily.
+SELL when candles are lower toward the right. BUY when candles are higher toward the right. Do not answer BUY when the swing is mixed.
+Do not name a symbol that is not printed on the chart.`
+
+function messageText(content: unknown) {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      if (typeof part === 'string') return part
+      if (part && typeof part === 'object' && 'text' in part && typeof part.text === 'string') return part.text
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n')
+}
+
+function loadHtmlImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('Could not read the chart image.'))
+    image.src = src
+  })
+}
+
+async function chartJpeg(dataUrl: string, cropTop?: number) {
+  try {
+    const image = await loadHtmlImage(dataUrl)
+    const scale = Math.min(1, 1200 / Math.max(image.naturalWidth || image.width, 1))
+    const fullWidth = Math.max(1, Math.round((image.naturalWidth || image.width) * scale))
+    const fullHeight = Math.max(1, Math.round((image.naturalHeight || image.height) * scale))
+    const height = cropTop ? Math.max(48, Math.round(fullHeight * cropTop)) : fullHeight
+    const canvas = document.createElement('canvas')
+    canvas.width = fullWidth
+    canvas.height = height
+    const context = canvas.getContext('2d')
+    if (!context) return dataUrl
+    context.drawImage(image, 0, 0, image.naturalWidth || image.width, ((image.naturalHeight || image.height) * height) / fullHeight, 0, 0, fullWidth, height)
+    return canvas.toDataURL('image/jpeg', 0.62)
+  } catch {
+    return dataUrl
+  }
+}
 
 async function requestModelText(
   messages: Array<{ role: string; content: unknown }>,
@@ -608,12 +651,12 @@ async function requestModelText(
     {
       url: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/engine/chat`,
       headers: { 'Content-Type': 'application/json' },
-      body: { messages, temperature: 0.2 },
+      body: { messages, model: 'openai', temperature: 0.1 },
     },
     {
       url: 'https://text.pollinations.ai/openai',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer anonymous' },
-      body: { messages, model: 'openai', temperature: 0.2, stream: true },
+      body: { messages, model: 'openai', temperature: 0.1, stream: true },
     },
   ]
   for (const attempt of attempts) {
@@ -628,15 +671,19 @@ async function requestModelText(
       })
       if (!response.ok) continue
       const type = response.headers.get('content-type') ?? ''
+      let text = ''
       if (type.includes('application/json') && !type.includes('event-stream')) {
         const payload = (await response.json()) as {
-          choices?: Array<{ message?: { content?: string | null } }>
+          choices?: Array<{ message?: { content?: unknown } }>
         }
-        const text = payload.choices?.[0]?.message?.content ?? ''
-        if (text.trim()) return text
-        continue
+        text = messageText(payload.choices?.[0]?.message?.content)
+      } else if (!type.includes('event-stream')) {
+        text = await response.text()
+      } else {
+        text = await readSseStream(response, () => undefined, combined)
       }
-      return await readSseStream(response, () => undefined, combined)
+      const label = parseChartLabel(text)
+      if (label?.symbol) return text
     } catch {
       if (signal?.aborted) return ''
     }
@@ -650,20 +697,33 @@ export const aiService = {
   },
 
   async readChartLabel(image: AiAttachment, signal?: AbortSignal) {
-    if (signal?.aborted || image.dataUrl.length > 1_200_000) return undefined
-    const text = await requestModelText(
-      [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: CHART_LABEL_PROMPT },
-            { type: 'image_url', image_url: { url: image.dataUrl } },
-          ],
-        },
-      ],
-      signal,
-    )
-    return parseChartLabel(text)
+    if (signal?.aborted) return undefined
+    const prepared = await chartJpeg(image.dataUrl)
+    const header = await chartJpeg(image.dataUrl, 0.28)
+    let text = ''
+    for (const shot of [prepared, header]) {
+      text = await requestModelText(
+        [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: CHART_LABEL_PROMPT },
+              { type: 'image_url', image_url: { url: shot } },
+            ],
+          },
+        ],
+        signal,
+      )
+      if (parseChartLabel(text)?.symbol) break
+    }
+    const label = parseChartLabel(text)
+    if (!label?.symbol) return undefined
+    if (!label.bias) {
+      const reads = await inspectAttachments([{ kind: 'image', dataUrl: prepared }])
+      if (reads[0]?.slope === 'lower to the right') label.bias = 'sell'
+      else if (reads[0]?.slope === 'higher to the right') label.bias = 'buy'
+    }
+    return label
   },
 
   async ask(input: AskInput) {

@@ -48,7 +48,8 @@ function sampleCanvas(source: CanvasImageSource, sourceWidth: number, sourceHeig
   const top = Math.floor(height * 0.12)
   const bottom = Math.floor(height * 0.82)
 
-  for (let x = 6; x < width - 6; x += 1) {
+  const chartRight = Math.floor(width * 0.72)
+  for (let x = 6; x < chartRight; x += 1) {
     let bestY = -1
     let bestScore = 18
     for (let y = top; y < bottom; y += 1) {
